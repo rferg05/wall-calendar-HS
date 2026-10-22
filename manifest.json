@@ -1,0 +1,192 @@
+{
+  "id": "wall-calendar",
+  "name": "Wall Calendar",
+  "version": "1.0.0",
+  "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo.",
+  "author": "Ryan",
+  "license": "MIT",
+  "minAppVersion": "1.7.1",
+  "moduleType": "wall-calendar",
+  "category": "Calendar",
+  "icon": "calendar-days",
+  "defaultConfig": {
+    "view": "twoWeeks",
+    "weekStart": "sunday",
+    "layout": "auto",
+    "showHeader": true,
+    "showTime": true,
+    "showLocation": false,
+    "titleLines": 2,
+    "colorBy": "calendar",
+    "chipStyle": "tinted",
+    "dayBackdrop": 70,
+    "textOutline": true,
+    "dimPast": true,
+    "showHolidays": true,
+    "showBirthdays": true,
+    "hideWords": "",
+    "textScale": 1,
+    "accentColor": "#3b82f6",
+    "timeFormat": "auto"
+  },
+  "defaultSize": {
+    "w": 1280,
+    "h": 720
+  },
+  "defaultStyle": {
+    "fontSize": 16,
+    "padding": 12,
+    "backgroundColor": "rgba(0, 0, 0, 0.35)"
+  },
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "view": {
+        "type": "string",
+        "title": "Show",
+        "enum": ["week", "twoWeeks", "month"],
+        "enumLabels": ["This week", "This week and next", "This month"],
+        "ui:widget": "select",
+        "ui:group": "View"
+      },
+      "weekStart": {
+        "type": "string",
+        "title": "Weeks start on",
+        "description": "Today makes the week views start with today and run 7 or 14 days ahead. The month always starts on Sunday or Monday.",
+        "enum": ["sunday", "monday", "today"],
+        "enumLabels": ["Sunday", "Monday", "Today"],
+        "ui:widget": "select",
+        "ui:group": "View"
+      },
+      "layout": {
+        "type": "string",
+        "title": "Week layout",
+        "description": "Week views only. Auto picks whichever allows the larger text for the module's shape: days side by side in a wide module, one day per row in a narrow or tall one.",
+        "enum": ["auto", "columns", "rows"],
+        "enumLabels": ["Auto (by module shape)", "Days side by side", "One day per row"],
+        "ui:widget": "select",
+        "ui:group": "View"
+      },
+      "showHeader": {
+        "type": "boolean",
+        "title": "Month / dates heading",
+        "ui:widget": "toggle",
+        "ui:group": "View"
+      },
+      "showTime": {
+        "type": "boolean",
+        "title": "Start times",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "showLocation": {
+        "type": "boolean",
+        "title": "Location",
+        "description": "Under the title, when days are side by side. The part before the first comma.",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "titleLines": {
+        "type": "number",
+        "title": "Lines per event title",
+        "description": "On a busy day, long titles are cut to this many lines so more events fit. A quiet day shows whole titles. A day with more events than fit shows \"+2 more\".",
+        "minimum": 1,
+        "maximum": 4,
+        "ui:widget": "slider",
+        "ui:step": 1,
+        "ui:group": "Events"
+      },
+      "colorBy": {
+        "type": "string",
+        "title": "Color events by",
+        "description": "Person uses each family member's color from Settings > Family, for calendars linked to them.",
+        "enum": ["calendar", "person"],
+        "enumLabels": ["Calendar color", "Person"],
+        "ui:widget": "select",
+        "ui:group": "Events"
+      },
+      "chipStyle": {
+        "type": "string",
+        "title": "Event style",
+        "description": "All-day events are always filled, so they stand apart from timed ones.",
+        "enum": ["tinted", "solid"],
+        "enumLabels": ["Dark with a color bar", "Filled with the color"],
+        "ui:widget": "select",
+        "ui:group": "Events"
+      },
+      "dimPast": {
+        "type": "boolean",
+        "title": "Fade past days and finished events",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "showHolidays": {
+        "type": "boolean",
+        "title": "Holidays",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "showBirthdays": {
+        "type": "boolean",
+        "title": "Birthdays",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "hideWords": {
+        "type": "string",
+        "title": "Hide events whose title contains",
+        "description": "Comma-separated, e.g. \"Busy, Tentative\".",
+        "ui:widget": "text",
+        "ui:group": "Events"
+      },
+      "textScale": {
+        "type": "number",
+        "title": "Text size",
+        "description": "Text already grows with the module. This makes it larger or smaller from there; larger fits fewer events per day.",
+        "minimum": 0.5,
+        "maximum": 2,
+        "ui:widget": "slider",
+        "ui:step": 0.05,
+        "ui:group": "Legibility"
+      },
+      "dayBackdrop": {
+        "type": "number",
+        "title": "Day darkness (%)",
+        "description": "A dark panel behind each day, so dates and events read over a bright photo. Raise it if a background washes the calendar out.",
+        "minimum": 0,
+        "maximum": 100,
+        "ui:widget": "slider",
+        "ui:step": 5,
+        "ui:group": "Legibility"
+      },
+      "textOutline": {
+        "type": "boolean",
+        "title": "Outline day names and dates",
+        "ui:widget": "toggle",
+        "ui:group": "Legibility"
+      },
+      "accentColor": {
+        "type": "string",
+        "title": "Today color",
+        "ui:widget": "color",
+        "ui:group": "Legibility"
+      },
+      "timeFormat": {
+        "type": "string",
+        "title": "Clock times",
+        "enum": ["auto", "12h", "24h"],
+        "enumLabels": ["Household setting", "12-hour", "24-hour"],
+        "ui:widget": "select",
+        "ui:group": "Legibility"
+      }
+    }
+  },
+  "exports": {
+    "component": "default"
+  },
+  "dataRequirements": [
+    "calendar"
+  ],
+  "prefetchUrl": null,
+  "permissions": []
+}

@@ -1,0 +1,190 @@
+// Which days are on screen, and which events fall on each of them. Days are
+// "YYYY-MM-DD" keys on the household's wall clock (Settings > timezone), not
+// the Pi's: a Pi left on UTC would otherwise move a Chicago evening event to
+// the next day. Pure functions, so they can be tested without a host.
+
+import type { Config, View, WeekStart } from './config';
+
+/** The host's CalendarEvent, as much of it as this module reads. */
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  location?: string;
+  allDay: boolean;
+  calendarColor?: string;
+  sourceId?: string;
+  sourceName?: string;
+  kind?: 'birthday' | 'holiday' | 'event';
+  /** Set by the host's event rules: replaces the color dot. */
+  icon?: string;
+}
+
+const DAY_MS = 86_400_000;
+
+const keyFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** The household's calendar date at an instant. */
+export function wallDate(ms: number, timezone?: string): string {
+  const zone = timezone || '';
+  let f = keyFormatters.get(zone);
+  if (!f) {
+    try {
+      f = new Intl.DateTimeFormat('en-CA', { timeZone: zone || undefined, year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch {
+      // An unknown zone name: the display's own clock is the best guess left.
+      f = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+    keyFormatters.set(zone, f);
+  }
+  const v: Record<string, string> = {};
+  for (const p of f.formatToParts(new Date(ms))) v[p.type] = p.value;
+  return `${v.year}-${v.month}-${v.day}`;
+}
+
+/** A day key as UTC midnight, for day arithmetic that never meets DST. */
+export function keyToUtc(key: string): number {
+  const [y, m, d] = key.split('-').map(Number);
+  return Date.UTC(y, m - 1, d);
+}
+
+export function addDays(key: string, n: number): string {
+  return new Date(keyToUtc(key) + n * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** 0 = Sunday. */
+export function weekday(key: string): number {
+  return new Date(keyToUtc(key)).getUTCDay();
+}
+
+export function daysBetween(a: string, b: string): number {
+  return Math.round((keyToUtc(b) - keyToUtc(a)) / DAY_MS);
+}
+
+function weekStartOf(key: string, start: WeekStart): string {
+  if (start === 'today') return key;
+  const first = start === 'monday' ? 1 : 0;
+  return addDays(key, -((weekday(key) - first + 7) % 7));
+}
+
+export interface ViewDays {
+  /** Every day drawn, in order, a multiple of 7. */
+  days: string[];
+  /** Month view: the month being shown ("2026-10"); days outside it are dimmed. */
+  month?: string;
+}
+
+/** The days a view draws. The month grid runs from the week holding the 1st
+ *  to the week holding the last day; a "today" week start can't anchor a
+ *  month grid, so it starts on Sunday there. */
+export function viewDays(view: View, today: string, start: WeekStart): ViewDays {
+  if (view === 'month') {
+    const month = today.slice(0, 7);
+    const first = `${month}-01`;
+    const nextMonth = addDays(`${month}-28`, 7).slice(0, 7);
+    const last = addDays(`${nextMonth}-01`, -1);
+    const from = weekStartOf(first, start === 'today' ? 'sunday' : start);
+    const weeks = Math.ceil((daysBetween(from, last) + 1) / 7);
+    return { days: Array.from({ length: weeks * 7 }, (_, i) => addDays(from, i)), month };
+  }
+  const from = weekStartOf(today, start);
+  const count = view === 'twoWeeks' ? 14 : 7;
+  return { days: Array.from({ length: count }, (_, i) => addDays(from, i)) };
+}
+
+/**
+ * The `/api/calendar` window for the drawn days. Padded a day each side so a
+ * gap between the Pi's zone and the household's can't cut off an edge day,
+ * and whole UTC days so the URL stays the same all day: a URL that changed
+ * every render would make the host refetch in a loop.
+ */
+export function fetchWindow(days: string[]): { timeMin: string; timeMax: string } {
+  return {
+    timeMin: new Date(keyToUtc(days[0]) - DAY_MS).toISOString(),
+    timeMax: new Date(keyToUtc(days[days.length - 1]) + 2 * DAY_MS).toISOString(),
+  };
+}
+
+/** Whether the event renders as all-day: the flag, or a date-only start. */
+export function isAllDay(ev: CalendarEvent): boolean {
+  return ev.allDay === true || !ev.start.includes('T');
+}
+
+/** First and last day an event covers, inclusive. All-day ends are exclusive
+ *  dates (a one-day event on the 7th ends on the 8th); a timed event ending
+ *  exactly at midnight doesn't reach into the next day. */
+export function eventSpan(ev: CalendarEvent, timezone?: string): { from: string; to: string } | null {
+  if (isAllDay(ev)) {
+    const from = ev.start.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from)) return null;
+    const endKey = (ev.end ?? '').slice(0, 10);
+    const to = /^\d{4}-\d{2}-\d{2}$/.test(endKey) && endKey > from ? addDays(endKey, -1) : from;
+    return { from, to };
+  }
+  const start = Date.parse(ev.start);
+  if (!Number.isFinite(start)) return null;
+  const endMs = Date.parse(ev.end);
+  const from = wallDate(start, timezone);
+  const to = Number.isFinite(endMs) && endMs > start ? wallDate(endMs - 1, timezone) : from;
+  return { from, to: to < from ? from : to };
+}
+
+export interface DayEvent {
+  event: CalendarEvent;
+  allDay: boolean;
+  startMs: number;
+  endMs: number;
+  /** Starts on this day (false on the later days of a multi-day event). */
+  first: boolean;
+  /** Ends on this day. */
+  last: boolean;
+}
+
+export type EventFilter = Pick<Config, 'showHolidays' | 'showBirthdays' | 'hideWords'>;
+
+export function keepEvent(ev: CalendarEvent, filter: EventFilter): boolean {
+  if (!ev || typeof ev.start !== 'string') return false;
+  if (ev.kind === 'holiday' && !filter.showHolidays) return false;
+  if (ev.kind === 'birthday' && !filter.showBirthdays) return false;
+  const title = (ev.title ?? '').toLowerCase();
+  return !filter.hideWords.some((w) => title.includes(w));
+}
+
+/**
+ * Each drawn day's events: all-day first, then by start time, then by title.
+ * The same event on two calendars (an invite two people accepted) is shown
+ * once.
+ */
+export function eventsByDay(
+  events: CalendarEvent[] | undefined,
+  days: string[],
+  filter: EventFilter,
+  timezone?: string,
+): Map<string, DayEvent[]> {
+  const out = new Map<string, DayEvent[]>(days.map((d) => [d, []]));
+  if (!Array.isArray(events) || days.length === 0) return out;
+  const first = days[0];
+  const last = days[days.length - 1];
+  const seen = new Set<string>();
+  for (const ev of events) {
+    if (!keepEvent(ev, filter)) continue;
+    const dedupe = `${(ev.title ?? '').trim().toLowerCase()}|${ev.start}|${ev.end}`;
+    if (seen.has(dedupe)) continue;
+    seen.add(dedupe);
+    const span = eventSpan(ev, timezone);
+    if (!span || span.to < first || span.from > last) continue;
+    const allDay = isAllDay(ev);
+    const startMs = allDay ? keyToUtc(span.from) : Date.parse(ev.start);
+    const endMs = allDay ? keyToUtc(span.to) + DAY_MS : Date.parse(ev.end);
+    for (let d = span.from < first ? first : span.from; d <= span.to && d <= last; d = addDays(d, 1)) {
+      out.get(d)?.push({ event: ev, allDay, startMs, endMs, first: d === span.from, last: d === span.to });
+    }
+  }
+  for (const list of out.values()) {
+    list.sort((a, b) => (a.allDay !== b.allDay ? (a.allDay ? -1 : 1) : 0)
+      || (a.allDay ? 0 : a.startMs - b.startMs)
+      || (a.event.title ?? '').localeCompare(b.event.title ?? ''));
+  }
+  return out;
+}

@@ -1,0 +1,93 @@
+// Module config, read defensively: the editor stores whatever its widgets
+// produce, so numbers can arrive as strings and old configs miss new keys.
+
+export type View = 'week' | 'twoWeeks' | 'month';
+export type WeekStart = 'sunday' | 'monday' | 'today';
+export type Layout = 'auto' | 'columns' | 'rows';
+
+export interface Config {
+  view: View;
+  weekStart: WeekStart;
+  /** Week views only: days side by side, or one day per row. */
+  layout: Layout;
+  showHeader: boolean;
+  showTime: boolean;
+  showLocation: boolean;
+  /** Lines an event title may wrap to before it is cut. */
+  titleLines: number;
+  colorBy: 'calendar' | 'person';
+  chipStyle: 'tinted' | 'solid';
+  /** Darkness behind each day, 0-100, so it reads over any photo. */
+  dayBackdrop: number;
+  textOutline: boolean;
+  dimPast: boolean;
+  showHolidays: boolean;
+  showBirthdays: boolean;
+  /** Lowercased words; events whose title contains one are hidden. */
+  hideWords: string[];
+  /** Multiplies the size worked out from the module's shape. */
+  textScale: number;
+  accentColor: string;
+  timeFormat: 'auto' | '12h' | '24h';
+}
+
+export const DEFAULTS: Config = {
+  view: 'twoWeeks',
+  weekStart: 'sunday',
+  layout: 'auto',
+  showHeader: true,
+  showTime: true,
+  showLocation: false,
+  titleLines: 2,
+  colorBy: 'calendar',
+  chipStyle: 'tinted',
+  dayBackdrop: 70,
+  textOutline: true,
+  dimPast: true,
+  showHolidays: true,
+  showBirthdays: true,
+  hideWords: [],
+  textScale: 1,
+  accentColor: '#3b82f6',
+  timeFormat: 'auto',
+};
+
+function oneOf<T extends string>(value: unknown, options: readonly T[], fallback: T): T {
+  return options.includes(value as T) ? (value as T) : fallback;
+}
+
+function bool(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return fallback;
+}
+
+function num(value: unknown, fallback: number, min: number, max: number): number {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) && value !== '' && value !== null ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+export function readConfig(raw: Record<string, unknown>): Config {
+  const words = typeof raw.hideWords === 'string' ? raw.hideWords : '';
+  return {
+    view: oneOf(raw.view, ['week', 'twoWeeks', 'month'] as const, DEFAULTS.view),
+    weekStart: oneOf(raw.weekStart, ['sunday', 'monday', 'today'] as const, DEFAULTS.weekStart),
+    layout: oneOf(raw.layout, ['auto', 'columns', 'rows'] as const, DEFAULTS.layout),
+    showHeader: bool(raw.showHeader, DEFAULTS.showHeader),
+    showTime: bool(raw.showTime, DEFAULTS.showTime),
+    showLocation: bool(raw.showLocation, DEFAULTS.showLocation),
+    titleLines: Math.round(num(raw.titleLines, DEFAULTS.titleLines, 1, 4)),
+    colorBy: oneOf(raw.colorBy, ['calendar', 'person'] as const, DEFAULTS.colorBy),
+    chipStyle: oneOf(raw.chipStyle, ['tinted', 'solid'] as const, DEFAULTS.chipStyle),
+    dayBackdrop: num(raw.dayBackdrop, DEFAULTS.dayBackdrop, 0, 100),
+    textOutline: bool(raw.textOutline, DEFAULTS.textOutline),
+    dimPast: bool(raw.dimPast, DEFAULTS.dimPast),
+    showHolidays: bool(raw.showHolidays, DEFAULTS.showHolidays),
+    showBirthdays: bool(raw.showBirthdays, DEFAULTS.showBirthdays),
+    hideWords: words.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean),
+    textScale: num(raw.textScale, DEFAULTS.textScale, 0.5, 2),
+    accentColor: typeof raw.accentColor === 'string' && raw.accentColor ? raw.accentColor : DEFAULTS.accentColor,
+    timeFormat: oneOf(raw.timeFormat, ['auto', '12h', '24h'] as const, DEFAULTS.timeFormat),
+  };
+}
