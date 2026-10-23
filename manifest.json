@@ -1,7 +1,7 @@
 {
   "id": "wall-calendar",
   "name": "Wall Calendar",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo. Merges duplicates across calendars and marks events you share.",
   "author": "Ryan",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "chipStyle": "tinted",
     "dayBackdrop": 70,
     "textOutline": true,
-    "dimPast": true,
+    "pastStyle": "gray",
     "showHolidays": true,
     "customHolidayColor": false,
     "holidayColor": "#ef4444",
@@ -187,10 +187,23 @@
         "ui:widget": "select",
         "ui:group": "Events"
       },
-      "dimPast": {
-        "type": "boolean",
-        "title": "Fade past days and finished events",
-        "ui:widget": "toggle",
+      "pastStyle": {
+        "type": "string",
+        "title": "Past events",
+        "description": "Events that have ended, today and earlier. Gray out keeps a dimmed bar of the event's color, so you can still tell whose it was. Earlier days' names and dates fade too, unless this is Leave as is.",
+        "enum": [
+          "gray",
+          "fade",
+          "hide",
+          "none"
+        ],
+        "enumLabels": [
+          "Gray out",
+          "Fade",
+          "Hide",
+          "Leave as is"
+        ],
+        "ui:widget": "select",
         "ui:group": "Events"
       },
       "showHolidays": {

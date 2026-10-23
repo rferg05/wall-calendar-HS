@@ -94,4 +94,10 @@ describe('readConfig', () => {
     expect(c.dayBackdrop).toBe(DEFAULTS.dayBackdrop);
     expect(c.layout).toBe('auto');
   });
+  it('carries the old fade-past toggle over to Past events', () => {
+    expect(readConfig({}).pastStyle).toBe('gray');
+    expect(readConfig({ dimPast: true }).pastStyle).toBe('gray');
+    expect(readConfig({ dimPast: false }).pastStyle).toBe('none');
+    expect(readConfig({ dimPast: false, pastStyle: 'hide' }).pastStyle).toBe('hide');
+  });
 });

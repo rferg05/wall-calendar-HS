@@ -5,10 +5,11 @@ Home Screens module: **this week**, **this week and next**, or **this month**, w
 ## What it shows
 
 - **Views:** *This week*, *This week and next* (the default), or *This month*. Weeks start on Sunday, Monday, or today (a rolling 7 or 14 days).
-- **Layout:** the week views try both of their layouts against the module's size and use whichever allows larger text. *Days side by side* is the usual calendar: 7 columns, with two rows for two weeks. *One day per row* puts each day's events on one line, and two weeks go side by side. A wide module gets columns; a square or tall one gets rows. *Week layout* in the settings can force one.
+- **Layout:** the week views have two layouts. *Days side by side* is the usual calendar: 7 columns, with two rows for two weeks. *One day per row* puts each day's events on one line, and two weeks go side by side. Auto estimates, for the module's size, how large the text can be in each and how many events a day each can hold, then picks the larger text among the layouts that hold the busiest day on screen. Big type never comes at the cost of hiding events, unless the other layout's text would be under 45% as large (days side by side in a narrow column), which is unreadable anyway. *Week layout* in the settings can force one.
 - **Events:** a chip for each event, with its start time and title. Timed events are dark chips in the event's own hue with a bar of its color. All-day events are filled with their color, so the two read apart at a glance. Text on them is white, or near-black on light colors like yellow. A multi-day event repeats on each day, with "→10a" on its last day when it ends partway through.
 - **Busy days:** a day with room shows whole titles. A busy day cuts titles a line at a time down to *Lines per event title*, then shrinks its own text to as little as 72%, and only then leaves events off with "+2 more".
-- **Today:** a ring in the *Today color*, and the date on a disc of it. With *Fade past days* on, earlier days are faded and today's finished events fade too.
+- **Today:** a ring in the *Today color*, and the date on a disc of it.
+- **Past events:** an event that has ended, today or earlier, turns into a flat gray chip with light gray text, keeping a dimmed bar of its color so whose it was still shows. Upcoming events stay in full color, so the eye goes straight to them. Earlier days' names and dates fade too. *Past events* can instead fade them, hide them, or leave them as they are.
 - **Colors:** by calendar color (the default), or by person, using each member's color from Settings > Family for the calendars linked to them.
 - **Duplicates:** with several calendars linked, the same event turns up more than once: an invite on two people's calendars, or a booking that both the restaurant site and Gmail added ("Reservation at Avec" and "Reservation: Avec"). Copies are merged into one when they start within 15 minutes of each other and nearly all the words of the shorter title are in the longer one, ignoring punctuation and words like "at", "with" and "the". So "Soccer practice" and "Soccer game" stay apart. The merged event shows the fuller title, the latest end, and any location either copy had.
 - **The ~ marker:** an Outlook event marked personal for the [calendar filter](../../../Calendar%20Filter/README.md) ends in `~`. The filter removes it from its own feed, but the same event reaches other calendars (an invite, a shared calendar) with the `~` still on. The module drops a `~` at either end of every title.
@@ -24,15 +25,16 @@ The built-in calendar draws small light text straight onto the module, which dis
 - **Gives each event its own solid chip**, with bold text at full contrast whatever the day panel or photo.
 - **Outlines day names and dates** with a fine dark ring, for the parts that sit on the day panel rather than a chip.
 
-Measured in the preview at default settings, two weeks on a 1080p screen (busy days go down to about 72% of these):
+Measured in the preview at default settings on a 1080p screen, with the preview's sample events (up to 5 on the busiest day). Busy days' text goes down to about 72% of these.
 
-| Module size | Layout | Event text |
+| Module size | This week | This week and next |
 |---|---|---|
-| 560×560 | one day per row, weeks side by side | 18 px |
-| 1280×720 | one day per row, weeks side by side | 33 px |
-| Full screen, 1880×1040 | one day per row, weeks side by side | 48 px |
+| Right of a 580px column, 1280×1040 | days side by side, 24 px, all events | days side by side, 24 px, all events |
+| Portrait column, 580×1040 | one day per row, 37 px, 3 hidden | one day per row, 24 px, 5 hidden |
+| Landscape strip, 1280×520 | days side by side, 24 px, all events | days side by side, 24 px, 4 hidden |
+| Wide strip, 1880×420 | one day per row, 19 px, all events | one day per row, 19 px, all events |
 
-For reading across a room, give it at least a third of the screen. *This week* on its own gets about twice the text size of two weeks in the same space.
+A landscape module, near square or wider, works best: seven days side by side reads like a paper calendar and gives titles room to wrap. A tall, narrow module has to go one day per row, where long titles and busy days run out of width. For reading across a room, give it at least a third of the screen.
 
 ## Where the events come from
 
@@ -65,7 +67,7 @@ This always points at the newest release. Home Screens doesn't check URL-install
 | Events you share | Both colors | Or one color of their own. |
 | Shared event color | purple | With *One color of their own*. |
 | Event style | Dark with a color bar | Or filled with the color. All-day events are always filled. |
-| Fade past days and finished events | on | |
+| Past events | Gray out | Or fade, hide, or leave as is. |
 | Holidays / Birthdays | on | |
 | Own color for holidays / Holiday color | off / red | Holidays in a color you pick, instead of the holiday calendar's. |
 | Hide events whose title contains | | Comma-separated. |

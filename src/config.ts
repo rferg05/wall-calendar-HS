@@ -28,7 +28,8 @@ export interface Config {
   /** Darkness behind each day, 0-100, so it reads over any photo. */
   dayBackdrop: number;
   textOutline: boolean;
-  dimPast: boolean;
+  /** Events that have ended: drained of color, faded, left off, or as is. */
+  pastStyle: 'gray' | 'fade' | 'hide' | 'none';
   showHolidays: boolean;
   showBirthdays: boolean;
   /** Lowercased words; events whose title contains one are hidden. */
@@ -56,7 +57,7 @@ export const DEFAULTS: Config = {
   chipStyle: 'tinted',
   dayBackdrop: 70,
   textOutline: true,
-  dimPast: true,
+  pastStyle: 'gray',
   showHolidays: true,
   showBirthdays: true,
   hideWords: [],
@@ -100,7 +101,9 @@ export function readConfig(raw: Record<string, unknown>): Config {
     chipStyle: oneOf(raw.chipStyle, ['tinted', 'solid'] as const, DEFAULTS.chipStyle),
     dayBackdrop: num(raw.dayBackdrop, DEFAULTS.dayBackdrop, 0, 100),
     textOutline: bool(raw.textOutline, DEFAULTS.textOutline),
-    dimPast: bool(raw.dimPast, DEFAULTS.dimPast),
+    // 1.1 and earlier had only an on/off "fade past" toggle; off still means off.
+    pastStyle: oneOf(raw.pastStyle, ['gray', 'fade', 'hide', 'none'] as const,
+      bool(raw.dimPast, true) ? DEFAULTS.pastStyle : 'none'),
     showHolidays: bool(raw.showHolidays, DEFAULTS.showHolidays),
     showBirthdays: bool(raw.showBirthdays, DEFAULTS.showBirthdays),
     hideWords: words.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean),

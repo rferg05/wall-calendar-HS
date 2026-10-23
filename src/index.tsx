@@ -13,7 +13,7 @@ import type { MergedEvent, Owner } from './merge';
 /** A day's event, after duplicates are merged. */
 type Item = DayEvent<MergedEvent>;
 
-/** Today, past-day dimming and finished events are re-read this often. */
+/** Today, past days and finished events are re-read this often. */
 const CLOCK_TICK_MS = 60_000;
 /** How often the module asks the host for events (the host's own calendar poll). */
 const FETCH_MS = 5 * 60_000;
@@ -118,19 +118,31 @@ function rangeLabel(days: string[], month?: string): string {
 // ── Layout ──────────────────────────────────────────────────────────────────
 
 type Plan =
-  | { kind: 'columns'; font: number }
-  | { kind: 'rows'; font: number; split: boolean }
+  | { kind: 'columns'; font: number; fits: number }
+  | { kind: 'rows'; font: number; split: boolean; fits: number }
   | { kind: 'month'; font: number };
+type WeekPlan = Exclude<Plan, { kind: 'month' }>;
+
+/** Rough sizes, in em, of a busy day's events at their smallest (titles
+ *  cut to two lines, text at MIN_STACK_SCALE), for guessing how many fit. */
+const STACKED_EVENT_EM = 3.7 * 0.72;
+const ROW_LINE_EM = 1.5 * 0.72;
+const ROW_EVENT_WIDTH_EM = 14 * 0.72;
+/** Auto never picks a layout with text under this share of the other's. */
+const MIN_LEGIBLE_SHARE = 0.45;
 
 /**
  * Text size from the space a day gets, so text grows with the module: a
  * calendar filling half the wall is readable from across the room without
  * touching Text size. For the week views it tries days side by side and one
- * day per row (and, for two weeks, the weeks side by side or stacked) and
- * keeps whichever allows the larger text. Columns win ties, since that's
- * the shape people expect a calendar to have.
+ * day per row (and, for two weeks, the weeks side by side or stacked), and
+ * estimates how many events a day holds in each. Auto keeps the larger text
+ * among the layouts that fit the busiest day on screen, so big type never
+ * comes at the cost of hiding events; when neither fits, it keeps the one
+ * that hides fewer. Columns win near-ties, since that's the shape people
+ * expect a calendar to have.
  */
-export function planLayout(config: Config, w: number, h: number, dayCount: number): Plan {
+export function planLayout(config: Config, w: number, h: number, dayCount: number, busiest = 0): Plan {
   const avail = h * (config.showHeader ? 0.9 : 1);
   const weeks = dayCount / 7;
   if (config.view === 'month') {
@@ -138,17 +150,34 @@ export function planLayout(config: Config, w: number, h: number, dayCount: numbe
     const cellH = (avail * 0.93) / weeks;
     return { kind: 'month', font: Math.min(cellW / 9, cellH / 3.6) };
   }
-  const columns: Plan = { kind: 'columns', font: Math.min(w / 7 / 7.5, avail / weeks / 5.5) };
-  const rowsFor = (split: boolean): Plan => {
+  const colFont = Math.min(w / 7 / 7.5, avail / weeks / 5.5);
+  const columns: WeekPlan = {
+    kind: 'columns', font: colFont,
+    // Less the day's name and date, and its padding: about 1.9em.
+    fits: Math.floor((avail / weeks / colFont - 1.9) / STACKED_EVENT_EM),
+  };
+  const rowsFor = (split: boolean): WeekPlan => {
     const rows = split ? 7 : dayCount;
     const colW = split ? w / 2 : w;
     // A row holds its padding plus one line of events: about 2.7em.
-    return { kind: 'rows', split, font: Math.min(avail / rows / 2.7, colW / 15) };
+    const font = Math.min(avail / rows / 2.7, colW / 15);
+    const lines = Math.max(1, Math.floor((avail / rows / font - 0.7) / ROW_LINE_EM));
+    // Less the day's name and date down the left: about 3em.
+    const perLine = Math.max(1, Math.floor((colW / font - 3) / ROW_EVENT_WIDTH_EM));
+    return { kind: 'rows', split, font, fits: lines * perLine };
   };
   const rows = weeks > 1 && rowsFor(true).font > rowsFor(false).font ? rowsFor(true) : rowsFor(false);
   if (config.layout === 'columns') return columns;
   if (config.layout === 'rows') return rows;
-  // Columns show more events per day, so they're worth some text size.
+  // A layout whose text is far smaller than the other's isn't worth fitting
+  // everything in: 11px columns in a narrow module are unreadable anyway.
+  const best = Math.max(columns.font, rows.font);
+  const legible = [columns, rows].filter((p) => p.font >= best * MIN_LEGIBLE_SHARE);
+  if (legible.length === 1) return legible[0];
+  const colsFit = columns.fits >= busiest;
+  const rowsFit = rows.fits >= busiest;
+  if (colsFit !== rowsFit) return colsFit ? columns : rows;
+  if (!colsFit && columns.fits !== rows.fits) return columns.fits > rows.fits ? columns : rows;
   return columns.font >= rows.font * 0.75 ? columns : rows;
 }
 
@@ -189,9 +218,12 @@ interface ChipProps {
   now: number;
   /** Time before the title on one line, instead of above it. */
   inline: boolean;
-  /** On a day before today. */
-  pastDay: boolean;
 }
+
+/** A finished event with "Gray out": a flat gray chip with light gray text,
+ *  keeping a dimmed bar of its color so whose it was still shows. */
+const PAST_SURFACE = 'rgba(46, 50, 58, 0.92)';
+const PAST_INK = '#c3c9d2';
 
 /** The chip's colors: its owner's, or for a shared event each owner's (or
  *  the one "together" color). */
@@ -210,21 +242,25 @@ function chipPalette(event: MergedEvent, config: Config) {
  *  surface blending one's tint into the other's. Filled, it runs from one
  *  color to the other. Nothing else on the calendar has a bar on its right
  *  edge, so "ours" reads from across the room without names. */
-function Chip({ item, config, time, now, inline, pastDay }: ChipProps) {
+function Chip({ item, config, time, now, inline }: ChipProps) {
   const { event, allDay } = item;
   const palette = chipPalette(event, config);
   const colors = palette[0];
   const both = palette.length > 1;
-  const solid = allDay || config.chipStyle === 'solid';
+  const finished = item.endMs <= now;
+  const grayed = finished && config.pastStyle === 'gray';
+  const faded = finished && config.pastStyle === 'fade';
+  // A grayed chip is never filled, so its color only survives in the bars.
+  const solid = (allDay || config.chipStyle === 'solid') && !grayed;
   // On a two-color fill, white with a shadow unless both colors want dark text.
-  const ink = !solid ? '#ffffff' : both && palette.some((p) => p.onBase !== colors.onBase) ? '#ffffff' : colors.onBase;
+  const ink = grayed ? PAST_INK
+    : !solid ? '#ffffff' : both && palette.some((p) => p.onBase !== colors.onBase) ? '#ffffff' : colors.onBase;
   const blend = (key: 'base' | 'surface') => (both
     ? `linear-gradient(90deg, ${palette.map((p, i) => `${p[key]} ${Math.round((i / (palette.length - 1)) * 100)}%`).join(', ')})`
     : colors[key]);
-  const bar = (color: string) => <div style={{ width: both ? '0.32em' : '0.26em', flexShrink: 0, background: color }} />;
-  // Only today's finished events fade here; a past day fades as a whole, and
-  // fading both would leave it unreadable.
-  const finished = config.dimPast && item.endMs <= now && !pastDay;
+  const bar = (color: string) => (
+    <div style={{ width: both ? '0.32em' : '0.26em', flexShrink: 0, background: color, opacity: grayed ? 0.5 : 1 }} />
+  );
   let when = '';
   if (config.showTime && !allDay) {
     if (item.first) when = time(item.startMs);
@@ -236,8 +272,8 @@ function Chip({ item, config, time, now, inline, pastDay }: ChipProps) {
   return (
     <div style={{
       display: 'flex', minWidth: 0, maxWidth: '100%', flexShrink: 0, borderRadius: '0.3em', overflow: 'hidden',
-      background: blend(solid ? 'base' : 'surface'), color: ink, opacity: finished ? 0.55 : 1,
-      boxShadow: '0 0.05em 0.2em rgba(0,0,0,0.45)',
+      background: grayed ? PAST_SURFACE : blend(solid ? 'base' : 'surface'), color: ink, opacity: faded ? 0.5 : 1,
+      boxShadow: grayed ? undefined : '0 0.05em 0.2em rgba(0,0,0,0.45)',
       textShadow: solid && both && ink === '#ffffff' ? '0 0 0.15em rgba(0,0,0,0.75)' : undefined,
     }}>
       {!solid && bar(colors.base)}
@@ -257,7 +293,9 @@ function Chip({ item, config, time, now, inline, pastDay }: ChipProps) {
       </div>
       {!solid && both && (
         <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-          {palette.slice(1).map((p, i) => <div key={i} style={{ flex: 1, width: '0.32em', background: p.base }} />)}
+          {palette.slice(1).map((p, i) => (
+            <div key={i} style={{ flex: 1, width: '0.32em', background: p.base, opacity: grayed ? 0.5 : 1 }} />
+          ))}
         </div>
       )}
     </div>
@@ -347,6 +385,11 @@ interface DayProps {
   resetKey: string;
 }
 
+/** Days before today: their day name and date fade, so the eye skips to
+ *  today. Their events show as finished on their own (see Chip). */
+const pastLabel = (day: string, today: string, config: Config): CSSProperties =>
+  (config.pastStyle !== 'none' && day < today ? { opacity: 0.5 } : {});
+
 function dayFrame(day: string, today: string, config: Config, faded: boolean): CSSProperties {
   const isToday = day === today;
   const a = config.dayBackdrop / 100;
@@ -384,8 +427,8 @@ const weekdayStyle = (config: Config, isToday: boolean): CSSProperties => ({
 function ColumnDay({ day, items, today, config, chip, resetKey }: DayProps) {
   const isToday = day === today;
   return (
-    <div style={{ ...dayFrame(day, today, config, config.dimPast && day < today), flexDirection: 'column', gap: '0.25em' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35em', padding: '0.05em 0.1em', flexShrink: 0 }}>
+    <div style={{ ...dayFrame(day, today, config, false), flexDirection: 'column', gap: '0.25em' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35em', padding: '0.05em 0.1em', flexShrink: 0, ...pastLabel(day, today, config) }}>
         <span style={weekdayStyle(config, isToday)}>{WEEKDAYS[weekday(day)]}</span>
         <DateNumber day={day} today={today} config={config} size="1.15em" />
       </div>
@@ -398,9 +441,10 @@ function ColumnDay({ day, items, today, config, chip, resetKey }: DayProps) {
 function RowDay({ day, items, today, config, chip, resetKey }: DayProps) {
   const isToday = day === today;
   return (
-    <div style={{ ...dayFrame(day, today, config, config.dimPast && day < today), flexDirection: 'row', alignItems: 'stretch', gap: '0.4em' }}>
+    <div style={{ ...dayFrame(day, today, config, false), flexDirection: 'row', alignItems: 'stretch', gap: '0.4em' }}>
       <div style={{
         width: '2.6em', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.12em',
+        ...pastLabel(day, today, config),
       }}>
         <span style={weekdayStyle(config, isToday)}>{WEEKDAYS[weekday(day)]}</span>
         <DateNumber day={day} today={today} config={config} size={Number(day.slice(8)) === 1 ? '0.9em' : '1.2em'} />
@@ -417,11 +461,11 @@ function MonthDay({ day, items, today, config, month, chip, resetKey }: DayProps
   const outside = month !== undefined && day.slice(0, 7) !== month;
   return (
     <div style={{
-      ...dayFrame(day, today, config, outside || (config.dimPast && day < today)),
+      ...dayFrame(day, today, config, outside),
       flexDirection: 'column', gap: '0.15em', padding: '0.2em',
       ...(outside ? { background: `rgba(8, 10, 14, ${(config.dayBackdrop / 100) * 0.6})` } : {}),
     }}>
-      <div style={{ padding: '0.05em 0.1em', flexShrink: 0, display: 'flex' }}>
+      <div style={{ padding: '0.05em 0.1em', flexShrink: 0, display: 'flex', ...pastLabel(day, today, config) }}>
         <DateNumber day={day} today={today} config={config} size="0.95em" />
       </div>
       <EventStack items={items} resetKey={resetKey} lines={config.titleLines} wrap={false}>{(item) => chip(item, true)}</EventStack>
@@ -465,16 +509,20 @@ export default function WallCalendar(props: WallCalendarProps) {
   const measureRef = useRef<HTMLDivElement>(null);
   const box = useBoxSize(measureRef);
   const pad = Number.isFinite(style.padding) ? style.padding : 0;
-  const plan = planLayout(config, Math.max(0, box.w - 2 * pad), Math.max(0, box.h - 2 * pad), days.length);
+  const shownByDay = useMemo(() => new Map([...byDay].map(([day, items]) => [
+    day, items.filter((item) => config.pastStyle !== 'hide' || item.endMs > now),
+  ])), [byDay, config.pastStyle, now]);
+  const busiest = Math.max(0, ...[...shownByDay.values()].map((items) => items.length));
+  const plan = planLayout(config, Math.max(0, box.w - 2 * pad), Math.max(0, box.h - 2 * pad), days.length, busiest);
   const textSize = (style.fontSize || 16) / 16;
   const fontPx = Math.max(MIN_FONT_PX, Math.min(140, plan.font * textSize * config.textScale));
   const resetKey = `${fontPx.toFixed(2)}|${plan.kind}|${config.titleLines}|${config.showTime}|${config.showLocation}`;
 
   const dayProps = (day: string): DayProps => ({
-    day, items: byDay.get(day) ?? [], today, config, month, resetKey,
+    day, today, config, month, resetKey,
+    items: shownByDay.get(day) ?? [],
     chip: (item, inline) => (
-      <Chip item={item} config={config} time={time} now={now} inline={inline}
-        pastDay={day < today} />
+      <Chip item={item} config={config} time={time} now={now} inline={inline} />
     ),
   });
 
