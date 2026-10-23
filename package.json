@@ -1,6 +1,6 @@
 {
   "name": "wall-calendar",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Home Screens plugin: a week, two-week or month calendar readable from across the room",
   "license": "MIT",
   "scripts": {

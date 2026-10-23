@@ -1,7 +1,7 @@
 {
   "id": "wall-calendar",
   "name": "Wall Calendar",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo. Merges duplicates across calendars and marks events you share.",
   "author": "Ryan",
   "license": "MIT",

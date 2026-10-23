@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULTS, readConfig } from './config';
-import { eventsByDay, eventSpan, fetchWindow, viewDays, wallDate } from './dates';
+import { dayStartMs, eventsByDay, eventSpan, fetchWindow, viewDays, wallDate } from './dates';
 import type { CalendarEvent } from './dates';
 
 const ev = (over: Partial<CalendarEvent>): CalendarEvent => ({
@@ -51,6 +51,19 @@ describe('days on the household clock', () => {
   it('all-day ends are exclusive', () => {
     expect(eventSpan(ev({ start: '2026-10-31', end: '2026-11-01', allDay: true }))).toEqual({ from: '2026-10-31', to: '2026-10-31' });
     expect(eventSpan(ev({ start: '2026-11-01', end: '2026-11-04', allDay: true }))).toEqual({ from: '2026-11-01', to: '2026-11-03' });
+  });
+  it("a day starts at the household's midnight, through DST changes", () => {
+    expect(new Date(dayStartMs('2026-10-23', 'America/Chicago')).toISOString()).toBe('2026-10-23T05:00:00.000Z');
+    expect(new Date(dayStartMs('2026-11-02', 'America/Chicago')).toISOString()).toBe('2026-11-02T06:00:00.000Z');
+    // DST ends at 2 am on Nov 1, after midnight: that midnight is still daylight time.
+    expect(new Date(dayStartMs('2026-11-01', 'America/Chicago')).toISOString()).toBe('2026-11-01T05:00:00.000Z');
+  });
+  it("today's all-day event lasts until the household's midnight, not UTC's", () => {
+    const [item] = eventsByDay([ev({ start: '2026-10-23', end: '2026-10-24', allDay: true })], ['2026-10-23'], DEFAULTS, 'America/Chicago')
+      .get('2026-10-23')!;
+    // 7:30 pm in Chicago is past UTC midnight; the event hasn't finished.
+    expect(item.endMs).toBeGreaterThan(Date.parse('2026-10-23T19:30:00-05:00'));
+    expect(new Date(item.endMs).toISOString()).toBe('2026-10-24T05:00:00.000Z');
   });
   it('a timed event ending at midnight stays on one day', () => {
     expect(eventSpan(ev({ start: '2026-10-22T20:00:00-05:00', end: '2026-10-23T00:00:00-05:00' }), 'America/Chicago'))

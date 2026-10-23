@@ -49,6 +49,39 @@ export function keyToUtc(key: string): number {
   return Date.UTC(y, m - 1, d);
 }
 
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** How far the household's clock is ahead of UTC at an instant, in ms. */
+function zoneOffset(ms: number, timezone?: string): number {
+  const zone = timezone || '';
+  let f = offsetFormatters.get(zone);
+  if (!f) {
+    try {
+      f = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone || undefined, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+    } catch {
+      return -new Date(ms).getTimezoneOffset() * 60_000;
+    }
+    offsetFormatters.set(zone, f);
+  }
+  const v: Record<string, number> = {};
+  for (const p of f.formatToParts(new Date(ms))) v[p.type] = Number(p.value);
+  return Date.UTC(v.year, v.month - 1, v.day, v.hour, v.minute, v.second) - Math.floor(ms / 1000) * 1000;
+}
+
+/** The instant a day starts on the household's clock: its midnight, not
+ *  UTC's. An all-day event ends at the next one; ending it at UTC midnight
+ *  instead grayed today's all-day events out at 7 pm in Chicago. */
+export function dayStartMs(key: string, timezone?: string): number {
+  const utc = keyToUtc(key);
+  // Twice, so a day whose offset differs from UTC midnight's (DST) lands right.
+  let ms = utc - zoneOffset(utc, timezone);
+  ms = utc - zoneOffset(ms, timezone);
+  return ms;
+}
+
 export function addDays(key: string, n: number): string {
   return new Date(keyToUtc(key) + n * DAY_MS).toISOString().slice(0, 10);
 }
@@ -170,8 +203,8 @@ export function eventsByDay<E extends CalendarEvent>(
     const span = eventSpan(ev, timezone);
     if (!span || span.to < first || span.from > last) continue;
     const allDay = isAllDay(ev);
-    const startMs = allDay ? keyToUtc(span.from) : Date.parse(ev.start);
-    const endMs = allDay ? keyToUtc(span.to) + DAY_MS : Date.parse(ev.end);
+    const startMs = allDay ? dayStartMs(span.from, timezone) : Date.parse(ev.start);
+    const endMs = allDay ? dayStartMs(addDays(span.to, 1), timezone) : Date.parse(ev.end);
     for (let d = span.from < first ? first : span.from; d <= span.to && d <= last; d = addDays(d, 1)) {
       out.get(d)?.push({ event: ev, allDay, startMs, endMs, first: d === span.from, last: d === span.to });
     }
