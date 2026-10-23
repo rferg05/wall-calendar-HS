@@ -25,8 +25,13 @@ export interface Config {
   customHolidayColor: boolean;
   holidayColor: string;
   chipStyle: 'tinted' | 'solid';
-  /** Darkness behind each day, 0-100, so it reads over any photo. */
+  /** Each day's card: its color, how strongly it's laid over the photo
+   *  (0-100), frosted-glass blur (px), and border. */
+  dayBackground: string;
   dayBackdrop: number;
+  dayBlur: number;
+  dayBorderWidth: number;
+  dayBorderColor: string;
   textOutline: boolean;
   /** Events that have ended: drained of color, faded, left off, or as is. */
   pastStyle: 'gray' | 'fade' | 'hide' | 'none';
@@ -55,7 +60,11 @@ export const DEFAULTS: Config = {
   customHolidayColor: false,
   holidayColor: '#ef4444',
   chipStyle: 'tinted',
+  dayBackground: '#080a0e',
   dayBackdrop: 70,
+  dayBlur: 0,
+  dayBorderWidth: 0,
+  dayBorderColor: '#64748b',
   textOutline: true,
   pastStyle: 'gray',
   showHolidays: true,
@@ -82,6 +91,9 @@ function num(value: unknown, fallback: number, min: number, max: number): number
   return Number.isFinite(n) && value !== '' && value !== null ? Math.min(max, Math.max(min, n)) : fallback;
 }
 
+const color = (value: unknown, fallback: string): string =>
+  (typeof value === 'string' && value.trim() ? value.trim() : fallback);
+
 export function readConfig(raw: Record<string, unknown>): Config {
   const words = typeof raw.hideWords === 'string' ? raw.hideWords : '';
   return {
@@ -99,7 +111,11 @@ export function readConfig(raw: Record<string, unknown>): Config {
     customHolidayColor: bool(raw.customHolidayColor, DEFAULTS.customHolidayColor),
     holidayColor: typeof raw.holidayColor === 'string' && raw.holidayColor ? raw.holidayColor : DEFAULTS.holidayColor,
     chipStyle: oneOf(raw.chipStyle, ['tinted', 'solid'] as const, DEFAULTS.chipStyle),
+    dayBackground: color(raw.dayBackground, DEFAULTS.dayBackground),
     dayBackdrop: num(raw.dayBackdrop, DEFAULTS.dayBackdrop, 0, 100),
+    dayBlur: num(raw.dayBlur, DEFAULTS.dayBlur, 0, 30),
+    dayBorderWidth: num(raw.dayBorderWidth, DEFAULTS.dayBorderWidth, 0, 8),
+    dayBorderColor: color(raw.dayBorderColor, DEFAULTS.dayBorderColor),
     textOutline: bool(raw.textOutline, DEFAULTS.textOutline),
     // 1.1 and earlier had only an on/off "fade past" toggle; off still means off.
     pastStyle: oneOf(raw.pastStyle, ['gray', 'fade', 'hide', 'none'] as const,

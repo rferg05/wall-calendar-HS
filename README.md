@@ -21,7 +21,7 @@ Home Screens module: **this week**, **this week and next**, or **this month**, w
 The built-in calendar draws small light text straight onto the module, which disappears over bright or busy photos, and cuts titles at 10 characters. This module:
 
 - **Sizes text from the module**, not a fixed size: the text grows with the space each day gets, as the CTA and Travel Times modules do. *Text size* in the settings, and the Style panel's Text size, adjust it from there.
-- **Puts a dark panel behind every day** (*Day darkness*, 70% by default), so the photo behind can't wash out dates and titles. Raise it if a background still makes it hard to read.
+- **Puts a card behind every day**, dark and 70% strong by default, so the photo behind can't wash out dates and titles. The *Day cards* settings style the cards the way the Style panel styles a module: background color and strength, a frosted-glass blur of the photo behind each card, and a border. Raise the strength, or add some blur, if a background still makes it hard to read.
 - **Gives each event its own solid chip**, with bold text at full contrast whatever the day panel or photo.
 - **Outlines day names and dates** with a fine dark ring, for the parts that sit on the day panel rather than a chip.
 
@@ -72,7 +72,10 @@ This always points at the newest release. Home Screens doesn't check URL-install
 | Own color for holidays / Holiday color | off / red | Holidays in a color you pick, instead of the holiday calendar's. |
 | Hide events whose title contains | | Comma-separated. |
 | Text size | 1× | 0.5–2×, on top of the size from the module's shape. |
-| Day darkness | 70% | The panel behind each day. |
+| Day cards: Background color | near-black | Each day's card. |
+| Day cards: Background strength | 70% | 0 is clear, 100 solid. Today's card is always at least 62%. Days outside the month in the month view get 60% of it. |
+| Day cards: Frosted glass (blur) | 0 (off) | Blurs the photo behind each card, up to 30 px. It stacks on the module's own Backdrop blur, so with that one high, this adds little. Heavy blur on many cards can slow an older Pi. |
+| Day cards: Border thickness / color | 0 (off) / slate | Up to 8 px. Today's accent ring sits inside the border. |
 | Outline day names and dates | on | |
 | Today color | blue | |
 | Clock times | Household setting | Or 12-hour (7p, 7:30p) or 24-hour. |

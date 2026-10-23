@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { PluginComponentProps } from './hs-plugin';
-import { hostFrameStyle } from './host-style';
+import { colorWithAlpha, hostFrameStyle } from './host-style';
 import { readConfig } from './config';
 import type { Config } from './config';
 import { eventsByDay, fetchWindow, viewDays, wallDate, weekday } from './dates';
@@ -390,14 +390,31 @@ interface DayProps {
 const pastLabel = (day: string, today: string, config: Config): CSSProperties =>
   (config.pastStyle !== 'none' && day < today ? { opacity: 0.5 } : {});
 
-function dayFrame(day: string, today: string, config: Config, faded: boolean): CSSProperties {
+/** Today's card is a step lighter than the rest, as well as ringed. */
+const TODAY_LIFT = 'linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08))';
+
+/**
+ * A day's card, styled from the Day cards settings the way the host styles a
+ * module: a background color laid over the photo at a chosen strength, an
+ * optional frosted-glass blur of what's behind it, and an optional border.
+ * `faint` (month days outside the month) halves the strength. A card never
+ * takes `opacity` itself: with the blur on, that hides the blur entirely (see
+ * host-style.ts), so faded cards fade their contents instead.
+ */
+function dayFrame(day: string, today: string, config: Config, faint = false): CSSProperties {
   const isToday = day === today;
-  const a = config.dayBackdrop / 100;
+  const strength = config.dayBackdrop / 100;
+  // Today's card stays solid enough to hold its ring, however thin the rest are.
+  const alpha = isToday ? Math.min(1, Math.max(strength, 0.5) + 0.12) : faint ? strength * 0.6 : strength;
+  const background = colorWithAlpha(config.dayBackground, alpha) ?? `rgba(8, 10, 14, ${alpha})`;
+  const blur = config.dayBlur > 0 ? `blur(${config.dayBlur}px)` : undefined;
   return {
-    minWidth: 0, minHeight: 0, display: 'flex', borderRadius: '0.4em', padding: '0.25em',
-    background: isToday ? `rgba(28, 34, 46, ${Math.max(a, 0.5) + 0.12})` : `rgba(8, 10, 14, ${a})`,
+    minWidth: 0, minHeight: 0, display: 'flex', borderRadius: '0.4em', padding: '0.25em', boxSizing: 'border-box',
+    background: isToday ? `${TODAY_LIFT}, ${background}` : background,
+    border: config.dayBorderWidth > 0 ? `${config.dayBorderWidth}px solid ${config.dayBorderColor}` : undefined,
     boxShadow: isToday ? `inset 0 0 0 0.12em ${config.accentColor}` : undefined,
-    opacity: faded ? 0.68 : 1,
+    backdropFilter: blur,
+    WebkitBackdropFilter: blur,
   };
 }
 
@@ -427,7 +444,7 @@ const weekdayStyle = (config: Config, isToday: boolean): CSSProperties => ({
 function ColumnDay({ day, items, today, config, chip, resetKey }: DayProps) {
   const isToday = day === today;
   return (
-    <div style={{ ...dayFrame(day, today, config, false), flexDirection: 'column', gap: '0.25em' }}>
+    <div style={{ ...dayFrame(day, today, config), flexDirection: 'column', gap: '0.25em' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35em', padding: '0.05em 0.1em', flexShrink: 0, ...pastLabel(day, today, config) }}>
         <span style={weekdayStyle(config, isToday)}>{WEEKDAYS[weekday(day)]}</span>
         <DateNumber day={day} today={today} config={config} size="1.15em" />
@@ -441,7 +458,7 @@ function ColumnDay({ day, items, today, config, chip, resetKey }: DayProps) {
 function RowDay({ day, items, today, config, chip, resetKey }: DayProps) {
   const isToday = day === today;
   return (
-    <div style={{ ...dayFrame(day, today, config, false), flexDirection: 'row', alignItems: 'stretch', gap: '0.4em' }}>
+    <div style={{ ...dayFrame(day, today, config), flexDirection: 'row', alignItems: 'stretch', gap: '0.4em' }}>
       <div style={{
         width: '2.6em', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.12em',
         ...pastLabel(day, today, config),
@@ -463,12 +480,13 @@ function MonthDay({ day, items, today, config, month, chip, resetKey }: DayProps
     <div style={{
       ...dayFrame(day, today, config, outside),
       flexDirection: 'column', gap: '0.15em', padding: '0.2em',
-      ...(outside ? { background: `rgba(8, 10, 14, ${(config.dayBackdrop / 100) * 0.6})` } : {}),
     }}>
-      <div style={{ padding: '0.05em 0.1em', flexShrink: 0, display: 'flex', ...pastLabel(day, today, config) }}>
+      <div style={{ padding: '0.05em 0.1em', flexShrink: 0, display: 'flex', ...(outside ? { opacity: 0.6 } : pastLabel(day, today, config)) }}>
         <DateNumber day={day} today={today} config={config} size="0.95em" />
       </div>
-      <EventStack items={items} resetKey={resetKey} lines={config.titleLines} wrap={false}>{(item) => chip(item, true)}</EventStack>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', opacity: outside ? 0.6 : 1 }}>
+        <EventStack items={items} resetKey={resetKey} lines={config.titleLines} wrap={false}>{(item) => chip(item, true)}</EventStack>
+      </div>
     </div>
   );
 }

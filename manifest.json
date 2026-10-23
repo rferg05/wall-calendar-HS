@@ -1,7 +1,7 @@
 {
   "id": "wall-calendar",
   "name": "Wall Calendar",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo. Merges duplicates across calendars and marks events you share.",
   "author": "Ryan",
   "license": "MIT",
@@ -22,7 +22,11 @@
     "sharedStyle": "split",
     "sharedColor": "#a855f7",
     "chipStyle": "tinted",
+    "dayBackground": "#080a0e",
     "dayBackdrop": 70,
+    "dayBlur": 0,
+    "dayBorderWidth": 0,
+    "dayBorderColor": "#64748b",
     "textOutline": true,
     "pastStyle": "gray",
     "showHolidays": true,
@@ -246,6 +250,49 @@
         "ui:widget": "text",
         "ui:group": "Events"
       },
+      "dayBackground": {
+        "type": "string",
+        "title": "Background color",
+        "description": "Each day's card. A dark color keeps white text readable over bright photos.",
+        "ui:widget": "color",
+        "ui:group": "Day cards"
+      },
+      "dayBackdrop": {
+        "type": "number",
+        "title": "Background strength (%)",
+        "description": "How strongly the background color covers the photo behind each day: 0 is clear, 100 is solid. Raise it if a background washes the calendar out. Today's card is always at least 62%, so its ring stands out.",
+        "minimum": 0,
+        "maximum": 100,
+        "ui:widget": "slider",
+        "ui:step": 5,
+        "ui:group": "Day cards"
+      },
+      "dayBlur": {
+        "type": "number",
+        "title": "Frosted glass (blur)",
+        "description": "Blurs the photo behind each day's card, like the module's own Backdrop blur, so text reads over a busy background even at a low strength. 0 is off. Heavy blur on many cards can slow an older Pi.",
+        "minimum": 0,
+        "maximum": 30,
+        "ui:widget": "slider",
+        "ui:step": 1,
+        "ui:group": "Day cards"
+      },
+      "dayBorderWidth": {
+        "type": "number",
+        "title": "Border thickness (px)",
+        "description": "0 is no border.",
+        "minimum": 0,
+        "maximum": 8,
+        "ui:widget": "slider",
+        "ui:step": 1,
+        "ui:group": "Day cards"
+      },
+      "dayBorderColor": {
+        "type": "string",
+        "title": "Border color",
+        "ui:widget": "color",
+        "ui:group": "Day cards"
+      },
       "textScale": {
         "type": "number",
         "title": "Text size",
@@ -254,16 +301,6 @@
         "maximum": 2,
         "ui:widget": "slider",
         "ui:step": 0.05,
-        "ui:group": "Legibility"
-      },
-      "dayBackdrop": {
-        "type": "number",
-        "title": "Day darkness (%)",
-        "description": "A dark panel behind each day, so dates and events read over a bright photo. Raise it if a background washes the calendar out.",
-        "minimum": 0,
-        "maximum": 100,
-        "ui:widget": "slider",
-        "ui:step": 5,
         "ui:group": "Legibility"
       },
       "textOutline": {

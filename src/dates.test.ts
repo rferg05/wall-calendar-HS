@@ -94,6 +94,13 @@ describe('readConfig', () => {
     expect(c.dayBackdrop).toBe(DEFAULTS.dayBackdrop);
     expect(c.layout).toBe('auto');
   });
+  it('reads day card styles, clamping numbers and keeping blank colors at their defaults', () => {
+    const c = readConfig({ dayBackground: '#1e293b', dayBlur: '50', dayBorderWidth: -2, dayBorderColor: ' ' });
+    expect(c.dayBackground).toBe('#1e293b');
+    expect(c.dayBlur).toBe(30);
+    expect(c.dayBorderWidth).toBe(0);
+    expect(c.dayBorderColor).toBe(DEFAULTS.dayBorderColor);
+  });
   it('carries the old fade-past toggle over to Past events', () => {
     expect(readConfig({}).pastStyle).toBe('gray');
     expect(readConfig({ dimPast: true }).pastStyle).toBe('gray');
