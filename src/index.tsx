@@ -7,6 +7,11 @@ import type { Config } from './config';
 import { eventsByDay, fetchWindow, viewDays, wallDate, weekday } from './dates';
 import type { CalendarEvent, DayEvent } from './dates';
 import { chipColors } from './colors';
+import { isShared, mergeEvents } from './merge';
+import type { MergedEvent, Owner } from './merge';
+
+/** A day's event, after duplicates are merged. */
+type Item = DayEvent<MergedEvent>;
 
 /** Today, past-day dimming and finished events are re-read this often. */
 const CLOCK_TICK_MS = 60_000;
@@ -59,11 +64,20 @@ function usePeople(calendarPeople: Person[] | undefined): Person[] {
   }, [calendarPeople, family]);
 }
 
-function eventColor(ev: CalendarEvent, people: Person[], config: Config): string {
-  const person = ev.sourceId ? people.find((p) => p.sourceIds.includes(ev.sourceId!)) : undefined;
-  return config.colorBy === 'person'
-    ? person?.color || ev.calendarColor || config.accentColor
-    : ev.calendarColor || person?.color || config.accentColor;
+/**
+ * Whose an event is, for merging: the person whose calendar it came from
+ * (Settings > Family, with their calendars linked), else the calendar itself.
+ * Two calendars linked to one person are one owner, so a duplicate across
+ * them is merged without being called shared.
+ */
+function ownerFinder(people: Person[], config: Config) {
+  return (ev: CalendarEvent): Owner => {
+    const person = ev.sourceId ? people.find((p) => p.sourceIds.includes(ev.sourceId!)) : undefined;
+    const color = config.colorBy === 'person'
+      ? person?.color || ev.calendarColor || config.accentColor
+      : ev.calendarColor || person?.color || config.accentColor;
+    return { key: person ? `person:${person.id}` : `calendar:${ev.sourceId ?? ev.calendarColor ?? ''}`, color };
+  };
 }
 
 // ── Formatting ──────────────────────────────────────────────────────────────
@@ -167,9 +181,8 @@ const clampedTitle: CSSProperties = {
 const ROOMY_LINES = 6;
 
 interface ChipProps {
-  item: DayEvent;
+  item: Item;
   config: Config;
-  color: string;
   time: (ms: number) => string;
   now: number;
   /** Time before the title on one line, instead of above it. */
@@ -178,14 +191,35 @@ interface ChipProps {
   pastDay: boolean;
 }
 
+/** The chip's colors: its owner's, or for a shared event each owner's (or
+ *  the one "together" color). */
+function chipPalette(event: MergedEvent, config: Config) {
+  if (!isShared(event)) return [chipColors(event.ownerColors[0])];
+  if (config.sharedStyle === 'color') return [chipColors(config.sharedColor)];
+  return [...new Set(event.ownerColors)].map((c) => chipColors(c));
+}
+
 /** One event. All-day events are filled with their color, timed ones (by
  *  default) a dark chip in their hue with a bar of it, so the two read apart
- *  at a glance. White text on either stays legible over any background. */
-function Chip({ item, config, color, time, now, inline, pastDay }: ChipProps) {
+ *  at a glance. White text on either stays legible over any background.
+ *
+ *  An event shared by two people, with "Both colors" on, is bookended: one
+ *  person's color down the left edge and the other's down the right, over a
+ *  surface blending one's tint into the other's. Filled, it runs from one
+ *  color to the other. Nothing else on the calendar has a bar on its right
+ *  edge, so "ours" reads from across the room without names. */
+function Chip({ item, config, time, now, inline, pastDay }: ChipProps) {
   const { event, allDay } = item;
-  const colors = chipColors(color);
+  const palette = chipPalette(event, config);
+  const colors = palette[0];
+  const both = palette.length > 1;
   const solid = allDay || config.chipStyle === 'solid';
-  const ink = solid ? colors.onBase : '#ffffff';
+  // On a two-color fill, white with a shadow unless both colors want dark text.
+  const ink = !solid ? '#ffffff' : both && palette.some((p) => p.onBase !== colors.onBase) ? '#ffffff' : colors.onBase;
+  const blend = (key: 'base' | 'surface') => (both
+    ? `linear-gradient(90deg, ${palette.map((p, i) => `${p[key]} ${Math.round((i / (palette.length - 1)) * 100)}%`).join(', ')})`
+    : colors[key]);
+  const bar = (color: string) => <div style={{ width: both ? '0.32em' : '0.26em', flexShrink: 0, background: color }} />;
   // Only today's finished events fade here; a past day fades as a whole, and
   // fading both would leave it unreadable.
   const finished = config.dimPast && item.endMs <= now && !pastDay;
@@ -200,11 +234,12 @@ function Chip({ item, config, color, time, now, inline, pastDay }: ChipProps) {
   return (
     <div style={{
       display: 'flex', minWidth: 0, maxWidth: '100%', flexShrink: 0, borderRadius: '0.3em', overflow: 'hidden',
-      background: solid ? colors.base : colors.surface, color: ink, opacity: finished ? 0.55 : 1,
+      background: blend(solid ? 'base' : 'surface'), color: ink, opacity: finished ? 0.55 : 1,
       boxShadow: '0 0.05em 0.2em rgba(0,0,0,0.45)',
+      textShadow: solid && both && ink === '#ffffff' ? '0 0 0.15em rgba(0,0,0,0.75)' : undefined,
     }}>
-      {!solid && <div style={{ width: '0.26em', flexShrink: 0, background: colors.base }} />}
-      <div style={{ minWidth: 0, padding: '0.14em 0.34em 0.16em', lineHeight: 1.15 }}>
+      {!solid && bar(colors.base)}
+      <div style={{ minWidth: 0, flex: both ? 1 : undefined, padding: '0.14em 0.34em 0.16em', lineHeight: 1.15 }}>
         {when && !inline && (
           <div style={{ fontSize: '0.78em', fontWeight: 800, whiteSpace: 'nowrap', opacity: 0.95 }}>{when}</div>
         )}
@@ -218,6 +253,11 @@ function Chip({ item, config, color, time, now, inline, pastDay }: ChipProps) {
           </div>
         )}
       </div>
+      {!solid && both && (
+        <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          {palette.slice(1).map((p, i) => <div key={i} style={{ flex: 1, width: '0.32em', background: p.base }} />)}
+        </div>
+      )}
     </div>
   );
 }
@@ -235,13 +275,13 @@ const MIN_STACK_SCALE = 0.72;
  * text size or the cell's size change.
  */
 function EventStack({ items, resetKey, wrap, lines, children }: {
-  items: DayEvent[];
+  items: Item[];
   resetKey: string;
   /** Events flow along a row and wrap, instead of stacking. */
   wrap: boolean;
   /** Title lines on a busy day. */
   lines: number;
-  children: (item: DayEvent) => ReactNode;
+  children: (item: Item) => ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const roomy = Math.max(lines, ROOMY_LINES);
@@ -296,12 +336,12 @@ function EventStack({ items, resetKey, wrap, lines, children }: {
 
 interface DayProps {
   day: string;
-  items: DayEvent[];
+  items: Item[];
   today: string;
   config: Config;
   /** Month view: the month on show; days outside it are dimmed. */
   month?: string;
-  chip: (item: DayEvent, inline: boolean) => ReactNode;
+  chip: (item: Item, inline: boolean) => ReactNode;
   resetKey: string;
 }
 
@@ -410,9 +450,13 @@ export default function WallCalendar(props: WallCalendarProps) {
   const { days, month } = useMemo(() => viewDays(config.view, today, config.weekStart), [config.view, config.weekStart, today]);
   const { events, error } = useEvents(days, props.events as CalendarEvent[] | undefined);
   const people = usePeople(props.people as Person[] | undefined);
+  const merged = useMemo(
+    () => mergeEvents(events, ownerFinder(people, config), config.mergeDuplicates),
+    [events, people, config],
+  );
   const byDay = useMemo(
-    () => eventsByDay(events, days, config, timezone),
-    [events, days, config, timezone],
+    () => eventsByDay(merged, days, config, timezone),
+    [merged, days, config, timezone],
   );
   const time = useMemo(() => timeFormatter(config, props.timeFormat, timezone), [config, props.timeFormat, timezone]);
 
@@ -427,7 +471,7 @@ export default function WallCalendar(props: WallCalendarProps) {
   const dayProps = (day: string): DayProps => ({
     day, items: byDay.get(day) ?? [], today, config, month, resetKey,
     chip: (item, inline) => (
-      <Chip item={item} config={config} color={eventColor(item.event, people, config)} time={time} now={now} inline={inline}
+      <Chip item={item} config={config} time={time} now={now} inline={inline}
         pastDay={day < today} />
     ),
   });

@@ -10,6 +10,10 @@ Home Screens module: **this week**, **this week and next**, or **this month**, w
 - **Busy days:** a day with room shows whole titles. A busy day cuts titles a line at a time down to *Lines per event title*, then shrinks its own text to as little as 72%, and only then leaves events off with "+2 more".
 - **Today:** a ring in the *Today color*, and the date on a disc of it. With *Fade past days* on, earlier days are faded and today's finished events fade too.
 - **Colors:** by calendar color (the default), or by person, using each member's color from Settings > Family for the calendars linked to them.
+- **Duplicates:** with several calendars linked, the same event turns up more than once: an invite on two people's calendars, or a booking that both the restaurant site and Gmail added ("Reservation at Avec" and "Reservation: Avec"). Copies are merged into one when they start within 15 minutes of each other and nearly all the words of the shorter title are in the longer one, ignoring punctuation and words like "at", "with" and "the". So "Soccer practice" and "Soccer game" stay apart. The merged event shows the fuller title, the latest end, and any location either copy had.
+- **The ~ marker:** an Outlook event marked personal for the [calendar filter](../../../Calendar%20Filter/README.md) ends in `~`. The filter removes it from its own feed, but the same event reaches other calendars (an invite, a shared calendar) with the `~` still on. The module drops a `~` at either end of every title.
+- **Events you share:** an event on more than one person's calendar is drawn as both of yours. With *Both colors* (the default), one person's color runs down the chip's left edge and the other's down its right, over a surface blending one tint into the other. A filled chip runs from one color to the other. Only shared events have a bar on the right, so they stand out from across the room. *One color of their own* draws them all in a single color instead (purple by default).
+  People are told apart by Settings > Family, with each person's calendars linked to them. Two calendars linked to the same person count as one: a duplicate across them is merged but isn't marked shared. A calendar linked to no one counts as its own person.
 
 ## Legibility
 
@@ -57,6 +61,9 @@ This always points at the newest release. Home Screens doesn't check URL-install
 | Start times / Location | on / off | Location shows with days side by side: the part before the first comma. |
 | Lines per event title | 2 | How short a busy day may cut titles. |
 | Color events by | Calendar color | Or person, from Settings > Family. |
+| Merge duplicate events | on | Near-duplicates as above. Off merges only exact copies. |
+| Events you share | Both colors | Or one color of their own. |
+| Shared event color | purple | With *One color of their own*. |
 | Event style | Dark with a color bar | Or filled with the color. All-day events are always filled. |
 | Fade past days and finished events | on | |
 | Holidays / Birthdays | on | |
@@ -71,7 +78,7 @@ This always points at the newest release. Home Screens doesn't check URL-install
 
 ```bash
 npm install
-npm test             # days on screen, event days across time zones, filters
+npm test             # days on screen, event days across time zones, filters, merging
 npm run preview      # module against a mock calendar at http://localhost:5177
 npm run build        # dist/bundle.js
 ```

@@ -130,8 +130,8 @@ export function eventSpan(ev: CalendarEvent, timezone?: string): { from: string;
   return { from, to: to < from ? from : to };
 }
 
-export interface DayEvent {
-  event: CalendarEvent;
+export interface DayEvent<E extends CalendarEvent = CalendarEvent> {
+  event: E;
   allDay: boolean;
   startMs: number;
   endMs: number;
@@ -153,25 +153,20 @@ export function keepEvent(ev: CalendarEvent, filter: EventFilter): boolean {
 
 /**
  * Each drawn day's events: all-day first, then by start time, then by title.
- * The same event on two calendars (an invite two people accepted) is shown
- * once.
+ * Duplicates are merged before this (merge.ts).
  */
-export function eventsByDay(
-  events: CalendarEvent[] | undefined,
+export function eventsByDay<E extends CalendarEvent>(
+  events: E[] | undefined,
   days: string[],
   filter: EventFilter,
   timezone?: string,
-): Map<string, DayEvent[]> {
-  const out = new Map<string, DayEvent[]>(days.map((d) => [d, []]));
+): Map<string, DayEvent<E>[]> {
+  const out = new Map<string, DayEvent<E>[]>(days.map((d) => [d, []]));
   if (!Array.isArray(events) || days.length === 0) return out;
   const first = days[0];
   const last = days[days.length - 1];
-  const seen = new Set<string>();
   for (const ev of events) {
     if (!keepEvent(ev, filter)) continue;
-    const dedupe = `${(ev.title ?? '').trim().toLowerCase()}|${ev.start}|${ev.end}`;
-    if (seen.has(dedupe)) continue;
-    seen.add(dedupe);
     const span = eventSpan(ev, timezone);
     if (!span || span.to < first || span.from > last) continue;
     const allDay = isAllDay(ev);

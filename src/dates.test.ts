@@ -60,12 +60,11 @@ describe('days on the household clock', () => {
 
 describe('eventsByDay', () => {
   const days = viewDays('week', '2026-10-22', 'sunday').days;
-  it('sorts all-day first, then by time, and drops duplicates', () => {
+  it('sorts all-day first, then by time', () => {
     const map = eventsByDay([
       ev({ id: '1', title: 'Late', start: '2026-10-22T21:00:00-05:00', end: '2026-10-22T22:00:00-05:00' }),
       ev({ id: '2', title: 'Early', start: '2026-10-22T08:00:00-05:00', end: '2026-10-22T09:00:00-05:00' }),
       ev({ id: '3', title: 'Holiday', start: '2026-10-22', end: '2026-10-23', allDay: true }),
-      ev({ id: '4', title: 'early', start: '2026-10-22T08:00:00-05:00', end: '2026-10-22T09:00:00-05:00' }),
     ], days, DEFAULTS, 'America/Chicago');
     expect(map.get('2026-10-22')!.map((d) => d.event.title)).toEqual(['Holiday', 'Early', 'Late']);
   });

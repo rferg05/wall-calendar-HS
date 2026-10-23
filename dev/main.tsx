@@ -23,8 +23,9 @@ const allDay = (days: number, len = 1) => ({ start: addDays(today, days), end: a
 
 const RYAN = 'cal-ryan';
 const AUDRA = 'cal-audra';
+const RYAN_GOOGLE = 'cal-ryan-google';
 const SHARED = 'cal-family';
-const COLORS: Record<string, string> = { [RYAN]: '#3b82f6', [AUDRA]: '#f97316', [SHARED]: '#22c55e' };
+const COLORS: Record<string, string> = { [RYAN]: '#f97316', [RYAN_GOOGLE]: '#f59e0b', [AUDRA]: '#3b82f6', [SHARED]: '#22c55e' };
 const ev = (id: string, title: string, src: string, when: { start: string; end: string; allDay?: boolean }, location?: string) => ({
   id, title, sourceId: src, calendarColor: COLORS[src], location, allDay: false, ...when,
 });
@@ -33,7 +34,16 @@ const EVENTS = [
   ev('a', 'Indoor volleyball', RYAN, { start: at(-1, '19:00'), end: at(-1, '21:00') }, 'Lakeview Athletic Club, Chicago'),
   ev('b', 'Mandy hang', AUDRA, { start: at(0, '08:00'), end: at(0, '09:30') }),
   ev('c', 'Dentist', RYAN, { start: at(0, '15:30'), end: at(0, '16:30') }, '30 N Michigan Ave, Chicago'),
-  ev('d', 'Reservation at Avec', AUDRA, { start: at(1, '19:30'), end: at(1, '21:30') }, '615 W Randolph St, Chicago'),
+  // The same booking, added by the restaurant site and by Gmail: shown once.
+  ev('d', 'Reservation at Avec', RYAN, { start: at(1, '19:30'), end: at(1, '21:30') }),
+  ev('d2', 'Reservation: Avec', RYAN_GOOGLE, { start: at(1, '19:30'), end: at(1, '21:00') }, '615 W Randolph St, Chicago'),
+  // On both calendars, one still carrying the calendar filter's ~: shown once, as shared.
+  ev('gala', 'Gala ~', RYAN, { start: at(2, '19:00'), end: at(2, '23:00') }),
+  ev('gala2', 'Gala', AUDRA, { start: at(2, '19:00'), end: at(2, '23:00') }),
+  ev('dinner', 'Dinner with the Parks', RYAN, { start: at(6, '18:30'), end: at(6, '20:30') }),
+  ev('dinner2', 'Dinner w/ the Parks ~', AUDRA, { start: at(6, '18:30'), end: at(6, '20:30') }),
+  ev('trip', 'Weekend away', AUDRA, allDay(12, 2)),
+  ev('trip2', 'Weekend away ~', RYAN, allDay(12, 2)),
   ev('e', "Gabby's birthday party", SHARED, { start: at(2, '13:00'), end: at(2, '16:00') }),
   ev('f', "Anya's Halloween costume swap", AUDRA, { start: at(2, '18:00'), end: at(2, '20:00') }),
   ev('g', 'Pumpkin patch with the Hendersons', SHARED, { start: at(2, '10:00'), end: at(2, '12:00') }),
@@ -70,12 +80,12 @@ const EVENTS = [
 };
 
 const FAMILY = { members: [
-  { id: 'p1', name: 'Ryan', color: '#3b82f6' },
-  { id: 'p2', name: 'Audra', color: '#ec4899' },
+  { id: 'p1', name: 'Ryan', color: '#f97316' },
+  { id: 'p2', name: 'Audra', color: '#3b82f6' },
 ] };
 const people = [
-  { id: 'p1', name: 'Ryan', color: '#3b82f6', sourceIds: [RYAN] },
-  { id: 'p2', name: 'Audra', color: '#ec4899', sourceIds: [AUDRA] },
+  { id: 'p1', name: 'Ryan', color: '#f97316', sourceIds: [RYAN, RYAN_GOOGLE] },
+  { id: 'p2', name: 'Audra', color: '#3b82f6', sourceIds: [AUDRA] },
 ];
 
 const style = {

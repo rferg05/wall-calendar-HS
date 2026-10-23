@@ -16,6 +16,11 @@ export interface Config {
   /** Lines an event title may wrap to before it is cut. */
   titleLines: number;
   colorBy: 'calendar' | 'person';
+  /** Merge near-duplicates (same time, near-same title), not just exact copies. */
+  mergeDuplicates: boolean;
+  /** An event on more than one person's calendar: both colors, or one color of its own. */
+  sharedStyle: 'split' | 'color';
+  sharedColor: string;
   chipStyle: 'tinted' | 'solid';
   /** Darkness behind each day, 0-100, so it reads over any photo. */
   dayBackdrop: number;
@@ -40,6 +45,9 @@ export const DEFAULTS: Config = {
   showLocation: false,
   titleLines: 2,
   colorBy: 'calendar',
+  mergeDuplicates: true,
+  sharedStyle: 'split',
+  sharedColor: '#a855f7',
   chipStyle: 'tinted',
   dayBackdrop: 70,
   textOutline: true,
@@ -79,6 +87,9 @@ export function readConfig(raw: Record<string, unknown>): Config {
     showLocation: bool(raw.showLocation, DEFAULTS.showLocation),
     titleLines: Math.round(num(raw.titleLines, DEFAULTS.titleLines, 1, 4)),
     colorBy: oneOf(raw.colorBy, ['calendar', 'person'] as const, DEFAULTS.colorBy),
+    mergeDuplicates: bool(raw.mergeDuplicates, DEFAULTS.mergeDuplicates),
+    sharedStyle: oneOf(raw.sharedStyle, ['split', 'color'] as const, DEFAULTS.sharedStyle),
+    sharedColor: typeof raw.sharedColor === 'string' && raw.sharedColor ? raw.sharedColor : DEFAULTS.sharedColor,
     chipStyle: oneOf(raw.chipStyle, ['tinted', 'solid'] as const, DEFAULTS.chipStyle),
     dayBackdrop: num(raw.dayBackdrop, DEFAULTS.dayBackdrop, 0, 100),
     textOutline: bool(raw.textOutline, DEFAULTS.textOutline),

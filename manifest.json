@@ -1,8 +1,8 @@
 {
   "id": "wall-calendar",
   "name": "Wall Calendar",
-  "version": "1.0.0",
-  "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo.",
+  "version": "1.1.0",
+  "description": "This week, this week and next, or the month, with every event's title readable from across the room over any background photo. Merges duplicates across calendars and marks events you share.",
   "author": "Ryan",
   "license": "MIT",
   "minAppVersion": "1.7.1",
@@ -18,6 +18,9 @@
     "showLocation": false,
     "titleLines": 2,
     "colorBy": "calendar",
+    "mergeDuplicates": true,
+    "sharedStyle": "split",
+    "sharedColor": "#a855f7",
     "chipStyle": "tinted",
     "dayBackdrop": 70,
     "textOutline": true,
@@ -44,8 +47,16 @@
       "view": {
         "type": "string",
         "title": "Show",
-        "enum": ["week", "twoWeeks", "month"],
-        "enumLabels": ["This week", "This week and next", "This month"],
+        "enum": [
+          "week",
+          "twoWeeks",
+          "month"
+        ],
+        "enumLabels": [
+          "This week",
+          "This week and next",
+          "This month"
+        ],
         "ui:widget": "select",
         "ui:group": "View"
       },
@@ -53,8 +64,16 @@
         "type": "string",
         "title": "Weeks start on",
         "description": "Today makes the week views start with today and run 7 or 14 days ahead. The month always starts on Sunday or Monday.",
-        "enum": ["sunday", "monday", "today"],
-        "enumLabels": ["Sunday", "Monday", "Today"],
+        "enum": [
+          "sunday",
+          "monday",
+          "today"
+        ],
+        "enumLabels": [
+          "Sunday",
+          "Monday",
+          "Today"
+        ],
         "ui:widget": "select",
         "ui:group": "View"
       },
@@ -62,8 +81,16 @@
         "type": "string",
         "title": "Week layout",
         "description": "Week views only. Auto picks whichever allows the larger text for the module's shape: days side by side in a wide module, one day per row in a narrow or tall one.",
-        "enum": ["auto", "columns", "rows"],
-        "enumLabels": ["Auto (by module shape)", "Days side by side", "One day per row"],
+        "enum": [
+          "auto",
+          "columns",
+          "rows"
+        ],
+        "enumLabels": [
+          "Auto (by module shape)",
+          "Days side by side",
+          "One day per row"
+        ],
         "ui:widget": "select",
         "ui:group": "View"
       },
@@ -100,17 +127,61 @@
         "type": "string",
         "title": "Color events by",
         "description": "Person uses each family member's color from Settings > Family, for calendars linked to them.",
-        "enum": ["calendar", "person"],
-        "enumLabels": ["Calendar color", "Person"],
+        "enum": [
+          "calendar",
+          "person"
+        ],
+        "enumLabels": [
+          "Calendar color",
+          "Person"
+        ],
         "ui:widget": "select",
         "ui:group": "Events"
+      },
+      "mergeDuplicates": {
+        "type": "boolean",
+        "title": "Merge duplicate events",
+        "description": "Shows one event for copies that start within 15 minutes of each other with nearly the same title, like \"Reservation at Avec\" and \"Reservation: Avec\". Off merges only exact copies.",
+        "ui:widget": "toggle",
+        "ui:group": "Events"
+      },
+      "sharedStyle": {
+        "type": "string",
+        "title": "Events you share",
+        "description": "An event on more than one person's calendar. Both colors puts one person's color on each end. People are told apart by Settings > Family, with each person's calendars linked to them; calendars linked to no one count as separate people.",
+        "enum": [
+          "split",
+          "color"
+        ],
+        "enumLabels": [
+          "Both colors",
+          "One color of their own"
+        ],
+        "ui:widget": "select",
+        "ui:group": "Events"
+      },
+      "sharedColor": {
+        "type": "string",
+        "title": "Shared event color",
+        "ui:widget": "color",
+        "ui:group": "Events",
+        "ui:showWhen": {
+          "field": "sharedStyle",
+          "equals": "color"
+        }
       },
       "chipStyle": {
         "type": "string",
         "title": "Event style",
         "description": "All-day events are always filled, so they stand apart from timed ones.",
-        "enum": ["tinted", "solid"],
-        "enumLabels": ["Dark with a color bar", "Filled with the color"],
+        "enum": [
+          "tinted",
+          "solid"
+        ],
+        "enumLabels": [
+          "Dark with a color bar",
+          "Filled with the color"
+        ],
         "ui:widget": "select",
         "ui:group": "Events"
       },
@@ -174,8 +245,16 @@
       "timeFormat": {
         "type": "string",
         "title": "Clock times",
-        "enum": ["auto", "12h", "24h"],
-        "enumLabels": ["Household setting", "12-hour", "24-hour"],
+        "enum": [
+          "auto",
+          "12h",
+          "24h"
+        ],
+        "enumLabels": [
+          "Household setting",
+          "12-hour",
+          "24-hour"
+        ],
         "ui:widget": "select",
         "ui:group": "Legibility"
       }
