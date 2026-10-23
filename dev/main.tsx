@@ -26,7 +26,7 @@ const AUDRA = 'cal-audra';
 const RYAN_GOOGLE = 'cal-ryan-google';
 const SHARED = 'cal-family';
 const COLORS: Record<string, string> = { [RYAN]: '#f97316', [RYAN_GOOGLE]: '#f59e0b', [AUDRA]: '#3b82f6', [SHARED]: '#22c55e' };
-const ev = (id: string, title: string, src: string, when: { start: string; end: string; allDay?: boolean }, location?: string) => ({
+const ev = (id: string, title: string, src: string, when: { start: string; end: string; allDay?: boolean; kind?: 'holiday' }, location?: string) => ({
   id, title, sourceId: src, calendarColor: COLORS[src], location, allDay: false, ...when,
 });
 
@@ -48,7 +48,7 @@ const EVENTS = [
   ev('f', "Anya's Halloween costume swap", AUDRA, { start: at(2, '18:00'), end: at(2, '20:00') }),
   ev('g', 'Pumpkin patch with the Hendersons', SHARED, { start: at(2, '10:00'), end: at(2, '12:00') }),
   ev('h', 'Trash night', SHARED, { start: at(3, '20:00'), end: at(3, '20:30') }),
-  ev('i', 'Halloween', SHARED, allDay(9)),
+  ev('i', 'Halloween', SHARED, { ...allDay(9), kind: 'holiday' }),
   ev('j', 'Parent-teacher conferences', AUDRA, { start: at(5, '16:00'), end: at(5, '17:00') }),
   ev('k', 'Cubs watch party', RYAN, { start: at(6, '18:00'), end: at(6, '22:00') }),
   ev('l', 'Book club', AUDRA, { start: at(7, '19:00'), end: at(7, '21:00') }),

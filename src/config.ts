@@ -21,6 +21,9 @@ export interface Config {
   /** An event on more than one person's calendar: both colors, or one color of its own. */
   sharedStyle: 'split' | 'color';
   sharedColor: string;
+  /** Draw holidays in `holidayColor` instead of the holiday calendar's color. */
+  customHolidayColor: boolean;
+  holidayColor: string;
   chipStyle: 'tinted' | 'solid';
   /** Darkness behind each day, 0-100, so it reads over any photo. */
   dayBackdrop: number;
@@ -48,6 +51,8 @@ export const DEFAULTS: Config = {
   mergeDuplicates: true,
   sharedStyle: 'split',
   sharedColor: '#a855f7',
+  customHolidayColor: false,
+  holidayColor: '#ef4444',
   chipStyle: 'tinted',
   dayBackdrop: 70,
   textOutline: true,
@@ -90,6 +95,8 @@ export function readConfig(raw: Record<string, unknown>): Config {
     mergeDuplicates: bool(raw.mergeDuplicates, DEFAULTS.mergeDuplicates),
     sharedStyle: oneOf(raw.sharedStyle, ['split', 'color'] as const, DEFAULTS.sharedStyle),
     sharedColor: typeof raw.sharedColor === 'string' && raw.sharedColor ? raw.sharedColor : DEFAULTS.sharedColor,
+    customHolidayColor: bool(raw.customHolidayColor, DEFAULTS.customHolidayColor),
+    holidayColor: typeof raw.holidayColor === 'string' && raw.holidayColor ? raw.holidayColor : DEFAULTS.holidayColor,
     chipStyle: oneOf(raw.chipStyle, ['tinted', 'solid'] as const, DEFAULTS.chipStyle),
     dayBackdrop: num(raw.dayBackdrop, DEFAULTS.dayBackdrop, 0, 100),
     textOutline: bool(raw.textOutline, DEFAULTS.textOutline),

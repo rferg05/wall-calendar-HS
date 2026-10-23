@@ -67,6 +67,7 @@ This always points at the newest release. Home Screens doesn't check URL-install
 | Event style | Dark with a color bar | Or filled with the color. All-day events are always filled. |
 | Fade past days and finished events | on | |
 | Holidays / Birthdays | on | |
+| Own color for holidays / Holiday color | off / red | Holidays in a color you pick, instead of the holiday calendar's. |
 | Hide events whose title contains | | Comma-separated. |
 | Text size | 1× | 0.5–2×, on top of the size from the module's shape. |
 | Day darkness | 70% | The panel behind each day. |

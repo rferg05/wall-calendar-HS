@@ -73,9 +73,11 @@ function usePeople(calendarPeople: Person[] | undefined): Person[] {
 function ownerFinder(people: Person[], config: Config) {
   return (ev: CalendarEvent): Owner => {
     const person = ev.sourceId ? people.find((p) => p.sourceIds.includes(ev.sourceId!)) : undefined;
-    const color = config.colorBy === 'person'
-      ? person?.color || ev.calendarColor || config.accentColor
-      : ev.calendarColor || person?.color || config.accentColor;
+    const color = ev.kind === 'holiday' && config.customHolidayColor
+      ? config.holidayColor
+      : config.colorBy === 'person'
+        ? person?.color || ev.calendarColor || config.accentColor
+        : ev.calendarColor || person?.color || config.accentColor;
     return { key: person ? `person:${person.id}` : `calendar:${ev.sourceId ?? ev.calendarColor ?? ''}`, color };
   };
 }

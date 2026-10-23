@@ -26,6 +26,8 @@
     "textOutline": true,
     "dimPast": true,
     "showHolidays": true,
+    "customHolidayColor": false,
+    "holidayColor": "#ef4444",
     "showBirthdays": true,
     "hideWords": "",
     "textScale": 1,
@@ -196,6 +198,27 @@
         "title": "Holidays",
         "ui:widget": "toggle",
         "ui:group": "Events"
+      },
+      "customHolidayColor": {
+        "type": "boolean",
+        "title": "Own color for holidays",
+        "description": "Off uses the holiday calendar's color from Settings > Calendar.",
+        "ui:widget": "toggle",
+        "ui:group": "Events",
+        "ui:showWhen": {
+          "field": "showHolidays",
+          "equals": true
+        }
+      },
+      "holidayColor": {
+        "type": "string",
+        "title": "Holiday color",
+        "ui:widget": "color",
+        "ui:group": "Events",
+        "ui:showWhen": {
+          "field": "customHolidayColor",
+          "equals": true
+        }
       },
       "showBirthdays": {
         "type": "boolean",
