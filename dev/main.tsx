@@ -25,7 +25,9 @@ const RYAN = 'cal-ryan';
 const AUDRA = 'cal-audra';
 const RYAN_GOOGLE = 'cal-ryan-google';
 const SHARED = 'cal-family';
-const COLORS: Record<string, string> = { [RYAN]: '#f97316', [RYAN_GOOGLE]: '#f59e0b', [AUDRA]: '#3b82f6', [SHARED]: '#22c55e' };
+const HUSKERS = 'cal-huskers';
+const BULLS = 'cal-bulls';
+const COLORS: Record<string, string> = { [RYAN]: '#f97316', [RYAN_GOOGLE]: '#f59e0b', [AUDRA]: '#3b82f6', [SHARED]: '#22c55e', [HUSKERS]: '#e11d48', [BULLS]: '#ce1141' };
 const ev = (id: string, title: string, src: string, when: { start: string; end: string; allDay?: boolean; kind?: 'holiday' }, location?: string) => ({
   id, title, sourceId: src, calendarColor: COLORS[src], location, allDay: false, ...when,
 });
@@ -61,6 +63,12 @@ const EVENTS = [
   ev('s', 'Haircut', AUDRA, { start: at(-3, '11:00'), end: at(-3, '11:45') }),
   ev('t', 'Pay rent', SHARED, allDay(-4)),
   ev('u', 'Housewarming at Jess & Kai', SHARED, { start: at(15, '18:00'), end: at(15, '22:00') }),
+  // Favorite teams, as their schedule feeds title them: shown with the team's logo.
+  ev('vb1', 'Volleyball -  Nebraska at Oregon', HUSKERS, { start: at(1, '20:00'), end: at(1, '22:00') }, 'Matthew Knight Arena, Eugene, Ore.'),
+  ev('vb2', 'Volleyball -  Nebraska vs. Iowa', HUSKERS, { start: at(5, '19:00'), end: at(5, '21:00') }, 'Bob Devaney Sports Center, Lincoln, Neb.'),
+  ev('bulls0', 'Bulls vs. Knicks L: 127-133', BULLS, { start: at(-1, '19:00'), end: at(-1, '21:30') }, 'United Center'),
+  ev('bulls1', 'Bulls at Trail Blazers', BULLS, { start: at(3, '21:00'), end: at(3, '23:30') }),
+  ev('bulls2', 'Bulls vs. Magic', BULLS, { start: at(8, '19:00'), end: at(8, '21:30') }, 'United Center'),
   ev('v', 'Thanksgiving planning call', RYAN, { start: at(20, '19:00'), end: at(20, '20:00') }),
 ];
 

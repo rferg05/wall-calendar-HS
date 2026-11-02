@@ -39,6 +39,10 @@ export interface Config {
   showBirthdays: boolean;
   /** Lowercased words; events whose title contains one are hidden. */
   hideWords: string[];
+  /** Mark favorite teams' games with the team's logo (see teams.ts). */
+  teamLogos: boolean;
+  /** With the logo shown, cut a game's title to the opponent: "at Oregon". */
+  shortTeamTitles: boolean;
   /** Multiplies the size worked out from the module's shape. */
   textScale: number;
   accentColor: string;
@@ -70,6 +74,8 @@ export const DEFAULTS: Config = {
   showHolidays: true,
   showBirthdays: true,
   hideWords: [],
+  teamLogos: true,
+  shortTeamTitles: true,
   textScale: 1,
   accentColor: '#3b82f6',
   timeFormat: 'auto',
@@ -123,6 +129,8 @@ export function readConfig(raw: Record<string, unknown>): Config {
     showHolidays: bool(raw.showHolidays, DEFAULTS.showHolidays),
     showBirthdays: bool(raw.showBirthdays, DEFAULTS.showBirthdays),
     hideWords: words.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean),
+    teamLogos: bool(raw.teamLogos, DEFAULTS.teamLogos),
+    shortTeamTitles: bool(raw.shortTeamTitles, DEFAULTS.shortTeamTitles),
     textScale: num(raw.textScale, DEFAULTS.textScale, 0.5, 2),
     accentColor: typeof raw.accentColor === 'string' && raw.accentColor ? raw.accentColor : DEFAULTS.accentColor,
     timeFormat: oneOf(raw.timeFormat, ['auto', '12h', '24h'] as const, DEFAULTS.timeFormat),

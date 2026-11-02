@@ -8,6 +8,7 @@ import { eventsByDay, fetchWindow, viewDays, wallDate, weekday } from './dates';
 import type { CalendarEvent, DayEvent } from './dates';
 import { chipColors } from './colors';
 import { isShared, mergeEvents } from './merge';
+import { withTeams } from './teams';
 import type { MergedEvent, Owner } from './merge';
 
 /** A day's event, after duplicates are merged. */
@@ -277,6 +278,9 @@ function Chip({ item, config, time, now, inline }: ChipProps) {
       textShadow: solid && both && ink === '#ffffff' ? '0 0 0.15em rgba(0,0,0,0.75)' : undefined,
     }}>
       {!solid && bar(colors.base)}
+      {event.teamLogo && (
+        <TeamLogo src={event.teamLogo} name={event.teamName} grayed={grayed} size={inline ? '1.3em' : '1.6em'} />
+      )}
       <div style={{ minWidth: 0, flex: both ? 1 : undefined, padding: '0.14em 0.34em 0.16em', lineHeight: 1.15 }}>
         {when && !inline && (
           <div style={{ fontSize: '0.78em', fontWeight: 800, whiteSpace: 'nowrap', opacity: 0.95 }}>{when}</div>
@@ -298,6 +302,23 @@ function Chip({ item, config, time, now, inline }: ChipProps) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** A team's logo beside its game, on a white disc so it holds up on a chip
+ *  of any color (a red bull on a red calendar's chip would vanish). A
+ *  finished game's logo goes gray with the rest of the chip. */
+function TeamLogo({ src, name, size, grayed }: { src: string; name?: string; size: string; grayed: boolean }) {
+  return (
+    <div style={{
+      width: size, height: size, flexShrink: 0, alignSelf: 'center', margin: '0.1em 0 0.1em 0.3em', borderRadius: '50%',
+      background: grayed ? '#9aa1ab' : '#ffffff', boxShadow: '0 0.03em 0.1em rgba(0, 0, 0, 0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <img src={src} alt={name ?? ''} style={{
+        width: '84%', height: '84%', objectFit: 'contain', filter: grayed ? 'grayscale(1) opacity(0.7)' : undefined,
+      }} />
     </div>
   );
 }
@@ -515,7 +536,10 @@ export default function WallCalendar(props: WallCalendarProps) {
   const { events, error } = useEvents(days, props.events as CalendarEvent[] | undefined);
   const people = usePeople(props.people as Person[] | undefined);
   const merged = useMemo(
-    () => mergeEvents(events, ownerFinder(people, config), config.mergeDuplicates),
+    () => {
+      const all = mergeEvents(events, ownerFinder(people, config), config.mergeDuplicates);
+      return config.teamLogos ? withTeams(all, config.shortTeamTitles) : all;
+    },
     [events, people, config],
   );
   const byDay = useMemo(
@@ -534,7 +558,7 @@ export default function WallCalendar(props: WallCalendarProps) {
   const plan = planLayout(config, Math.max(0, box.w - 2 * pad), Math.max(0, box.h - 2 * pad), days.length, busiest);
   const textSize = (style.fontSize || 16) / 16;
   const fontPx = Math.max(MIN_FONT_PX, Math.min(140, plan.font * textSize * config.textScale));
-  const resetKey = `${fontPx.toFixed(2)}|${plan.kind}|${config.titleLines}|${config.showTime}|${config.showLocation}`;
+  const resetKey = `${fontPx.toFixed(2)}|${plan.kind}|${config.titleLines}|${config.showTime}|${config.showLocation}|${config.teamLogos}|${config.shortTeamTitles}`;
 
   const dayProps = (day: string): DayProps => ({
     day, today, config, month, resetKey,

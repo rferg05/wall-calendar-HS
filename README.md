@@ -42,6 +42,21 @@ The host only hands plugins events from today forward (Settings > Calendar > day
 
 Holidays, birthdays, and events whose title contains a word from *Hide events whose title contains* can be left out.
 
+## Team games
+
+Games of two favorite teams carry the team's logo, on a white disc beside the title, and the title is shortened to the opponent ("at Oregon", "vs. Knicks · L 127–133"), since the logo already says whose game it is.
+
+The schedules come from each team's own calendar feed. Add them in **Settings > Calendar** as iCal calendars:
+
+| Team | Feed address |
+|---|---|
+| Nebraska Volleyball | `https://api.calendar.wmt.digital/api/calendar/calendar.ics?username=huskers&category%5B%5D=299` |
+| Chicago Bulls | `https://chibullsdigital.com/schedule/ics/bulls_calendar.ics` |
+
+Games are recognized by their titles, so the calendars can have any name. Pick a calendar color that sets them apart from yours, a neutral gray say, and let the logo carry the team. The Huskers feed only lists games still to come, so a game drops off the calendar once it's played. The Bulls feed keeps past games, with the score.
+
+Turn it off with *Team logos*, or keep the logos and the full titles with *Shorten game titles* off.
+
 ## Install
 
 In the Home Screens editor, open the Plugin Store, choose **Install from URL**, and paste:
@@ -71,6 +86,7 @@ This always points at the newest release. Home Screens doesn't check URL-install
 | Holidays / Birthdays | on | |
 | Own color for holidays / Holiday color | off / red | Holidays in a color you pick, instead of the holiday calendar's. |
 | Hide events whose title contains | | Comma-separated. |
+| Team logos / Shorten game titles | on / on | Nebraska Volleyball and Chicago Bulls games. See Team games. |
 | Text size | 1× | 0.5–2×, on top of the size from the module's shape. |
 | Day cards: Background color | near-black | Each day's card. |
 | Day cards: Background strength | 70% | 0 is clear, 100 solid. Today's card is always at least 62%. Days outside the month in the month view get 60% of it. |

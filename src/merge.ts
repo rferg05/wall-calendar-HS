@@ -17,6 +17,9 @@ export interface MergedEvent extends CalendarEvent {
   owners: string[];
   /** Each owner's color, matching `owners`. */
   ownerColors: string[];
+  /** A favorite team's game: its logo (a data URL) and the team (see teams.ts). */
+  teamLogo?: string;
+  teamName?: string;
 }
 
 /** Starts this close together can be the same event. */
