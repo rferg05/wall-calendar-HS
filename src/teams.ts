@@ -53,11 +53,13 @@ export function teamGame(title: string | undefined): { team: Team; title: string
   return null;
 }
 
-/** Mark each team game with its logo (`teamLogo`) and, with `shorten`, the short title. */
-export function withTeams<E extends { title: string; teamLogo?: string; teamName?: string }>(events: E[], shorten: boolean): E[] {
+/** Mark each team game with its logo (`teamLogo`) and, with `shorten`, the short title.
+ *  A game shows only when it starts and whether it's home or away ("vs."/"at"),
+ *  so its location is dropped here and the chip leaves off its end time. */
+export function withTeams<E extends { title: string; location?: string; teamLogo?: string; teamName?: string }>(events: E[], shorten: boolean): E[] {
   return events.map((ev) => {
     const game = teamGame(ev.title);
     if (!game) return ev;
-    return { ...ev, teamLogo: game.team.logo, teamName: game.team.name, title: shorten ? game.title : ev.title };
+    return { ...ev, teamLogo: game.team.logo, teamName: game.team.name, title: shorten ? game.title : ev.title, location: undefined };
   });
 }

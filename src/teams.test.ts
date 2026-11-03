@@ -26,11 +26,13 @@ describe('teamGame', () => {
 
 describe('withTeams', () => {
   it('adds the logo, and shortens the title only when asked', () => {
-    const events: { title: string; teamLogo?: string; teamName?: string }[] = [{ title: 'Bulls vs. Magic' }, { title: 'Book club' }];
+    const events: { title: string; location?: string; teamLogo?: string; teamName?: string }[] = [
+      { title: 'Bulls vs. Magic', location: 'United Center, Chicago' }, { title: 'Book club', location: 'Library' }];
     const [game, other] = withTeams(events, true);
     expect(game.title).toBe('vs. Magic');
     expect(game.teamName).toBe('Chicago Bulls');
     expect(game.teamLogo).toBeTruthy();
+    expect(game.location).toBeUndefined();
     expect(other).toBe(events[1]);
     expect(withTeams(events, false)[0].title).toBe('Bulls vs. Magic');
   });

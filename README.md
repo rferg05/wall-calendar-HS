@@ -44,7 +44,7 @@ Holidays, birthdays, and events whose title contains a word from *Hide events wh
 
 ## Team games
 
-Games of two favorite teams carry the team's logo, on a white disc beside the title, and the title is shortened to the opponent ("at Oregon", "vs. Knicks · L 127–133"), since the logo already says whose game it is.
+Games of two favorite teams carry the team's logo, on a white disc beside the title, and the title is shortened to the opponent ("at Oregon", "vs. Knicks · L 127–133"), since the logo already says whose game it is. A game shows its start time and "vs." (home) or "at" (away), without its location or end time.
 
 The schedules come from each team's own calendar feed. Add them in **Settings > Calendar** as iCal calendars:
 
